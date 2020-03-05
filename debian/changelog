@@ -1,0 +1,5 @@
+eos-hack-extension (3.8.0) eos; urgency=medium
+
+  * Initial release of the Hack extension
+
+ -- Daniel Garcia Moreno <daniel@endlessm.com>  Thu, 05 Mar 2020 08:49:04 +0100

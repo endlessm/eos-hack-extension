@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Daniel Garcia Moreno <daniel@endlessm.com>
 Uploaders: Daniel Garcia Moreno <daniel@endlessm.com>
 Build-Depends:
+ libglib2.0-bin (>= 2.62),
  sassc (>= 3.5.0),
  debhelper-compat (= 12),
  meson (>= 0.40.0)

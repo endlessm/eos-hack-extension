@@ -7,12 +7,6 @@ sources = [
   'extension.js',
   'service.js',
   'utils.js',
-  'misc/soundServer.js',
-  'ui/soundable.js',
-  'ui/clubhouse.js',
-  'ui/wobbly.js',
-  'ui/codeView.js',
-  'ui/appDisplay.js',
 ]
 extra_sources = [
   'COPYING',
@@ -54,17 +48,20 @@ install_data(sources + extra_sources + meta,
   install_dir: join_paths(extensiondir, uuid)
 )
 install_subdir('data', install_dir: join_paths(extensiondir, uuid))
+install_subdir('misc', install_dir: join_paths(extensiondir, uuid))
+install_subdir('ui', install_dir: join_paths(extensiondir, uuid))
 
 glib_compile = find_program('glib-compile-schemas', required: true)
 schemas_files = []
 foreach s : schemas
   schema = 'schemas/@0@.gschema.xml'.format(s)
   schemas_files += schema
-  run_command([glib_compile, 'schemas'])
   install_data(schema,
     install_dir: schemadir
   )
 endforeach
+
+run_command([glib_compile, 'schemas'])
 install_data('schemas/gschemas.compiled', install_dir: schemadir)
 
 sassc = find_program('sassc', required: true)

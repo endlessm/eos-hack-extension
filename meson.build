@@ -64,6 +64,9 @@ endforeach
 run_command([glib_compile, 'schemas'])
 install_data('schemas/gschemas.compiled', install_dir: schemadir)
 
+run_command([glib_compile, 'migration'])
+install_subdir('migration', install_dir: join_paths(extensiondir, uuid))
+
 sassc = find_program('sassc', required: true)
 sassc_opts = [ '-a', '-M', '-t', 'compact' ]
 styles = custom_target('styles',

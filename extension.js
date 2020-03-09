@@ -21,9 +21,12 @@ const Hack = ExtensionUtils.getCurrentExtension();
 
 // To import custom files
 const { appDisplay, clubhouse, codeView } = Hack.imports.ui;
+const { tryMigrateSettings } = Hack.imports.utils;
 const Service = Hack.imports.service;
 
 function enable() {
+    tryMigrateSettings();
+
     appDisplay.enable();
     clubhouse.enable();
     codeView.enable();

@@ -1,7 +1,23 @@
-/* exported getSettings, loadInterfaceXML, override, restore, original */
+/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings */
 
 const { Gio } = imports.gi;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
+
+function getMigrationSettings() {
+    const dir = Extension.dir.get_child('migration').get_path();
+    const source = Gio.SettingsSchemaSource.new_from_directory(dir,
+        Gio.SettingsSchemaSource.get_default(), false);
+
+    if (!source)
+        throw new Error('Error Initializing the thingy.');
+
+    const schema = source.lookup('org.gnome.shell', false);
+
+    if (!schema)
+        throw new Error('Schema missing.');
+
+    return new Gio.Settings({ settings_schema: schema });
+}
 
 function getSettings() {
     const dir = Extension.dir.get_child('schemas').get_path();
@@ -17,6 +33,36 @@ function getSettings() {
         throw new Error('Schema missing.');
 
     return new Gio.Settings({ settings_schema: schema });
+}
+
+function tryMigrateSettings() {
+    const settings = getSettings();
+    if (settings.get_boolean('hack-settings-migrated')) {
+        return;
+    }
+
+    const oldSettings = getMigrationSettings();
+    const boolSettings = [
+        'hack-mode-enabled',
+        'hack-icon-pulse',
+        'show-hack-launcher',
+        'wobbly-effect',
+    ];
+    const floatSettings = [
+        'wobbly-spring-k',
+        'wobbly-spring-friction',
+        'wobbly-slowdown-factor',
+        'wobbly-object-movement-range',
+    ];
+
+    boolSettings.forEach((k) => {
+        settings.set_boolean(k, oldSettings.get_boolean(k));
+    });
+    floatSettings.forEach((k) => {
+        settings.set_double(k, oldSettings.get_double(k));
+    });
+
+    settings.set_boolean('hack-settings-migrated', true);
 }
 
 function loadInterfaceXML(iface) {

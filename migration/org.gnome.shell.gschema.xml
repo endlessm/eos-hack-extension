@@ -1,13 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
 <schemalist>
-  <schema path="/com/endlessm/hack-extension/" id="com.endlessm.hack-extension" >
-    <key type="b" name="hack-settings-migrated">
-      <default>false</default>
-      <summary>The old hack settings has been migrated</summary>
-      <description>If true, the settings from org.gnome.shell has been copied to the new schema</description>
-    </key>
+  <schema id="org.gnome.shell" path="/org/gnome/shell/"
+          gettext-domain="gnome-shell">
     <key type="b" name="hack-mode-enabled">
-      <default>true</default>
+      <default>false</default>
       <summary>Enable Hack mode</summary>
       <description>If true, enables the Hack experience</description>
     </key>

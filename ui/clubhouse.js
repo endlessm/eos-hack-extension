@@ -1250,5 +1250,4 @@ function disable() {
     Utils.restore(MessageList.URLHighlighter);
     Utils.restore(MessageList.Message);
     Utils.restore(NotificationDaemon.GtkNotificationDaemonAppSource);
-    MessageList.URLHighlighter.setMarkup = originalSetMarkup;
 }

@@ -1725,8 +1725,7 @@ function mapWindow(shellwm, actor) {
         // If we have an active splash window for the app, don't animate it.
         const tracker = Shell.WindowTracker.get_default();
         const app = tracker.get_window_app(metaWindow);
-        const someWindow = app.get_windows().some(w => Shell.WindowTracker.is_speedwagon_window(w));
-        const hasSplashWindow = app && someWindow;
+        const hasSplashWindow = app && app.get_windows().some(w => Shell.WindowTracker.is_speedwagon_window(w));
         if (hasSplashWindow) {
             if (!this._codeViewManager.handleMapWindow(actor))
                 shellwm.completed_map(actor);

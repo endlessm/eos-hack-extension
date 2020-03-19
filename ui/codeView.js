@@ -1258,7 +1258,6 @@ var CodingSession = GObject.registerClass({
     }
 
     _playAnimationSound(direction) {
-        void this;
         if (direction === Gtk.DirectionType.LEFT)
             SoundServer.getDefault().play('shell/tracking-button/flip/click');
         else
@@ -1498,7 +1497,6 @@ var CodeViewManager = GObject.registerClass({
     }
 
     _isClubhouseInstalled() {
-        void this;
         return Clubhouse.getClubhouseApp() || Clubhouse.getClubhouseApp('com.endlessm.Clubhouse');
     }
 

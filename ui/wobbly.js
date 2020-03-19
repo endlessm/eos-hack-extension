@@ -52,7 +52,6 @@ var ControllableShellWobblyEffect = GObject.registerClass({
     },
 }, class ControllableShellWobblyEffect extends GObject.Object {
     vfunc_get_name() {
-        void this;
         return 'wobbly';
     }
 
@@ -71,7 +70,6 @@ var ControllableShellWobblyEffect = GObject.registerClass({
 var GSettingsShellWobblyEffect = GObject.registerClass({
 }, class GSettingsShellWobblyEffect extends ControllableShellWobblyEffect {
     vfunc_get_name() {
-        void this;
         return 'gsettings-wobbly';
     }
 
@@ -122,7 +120,6 @@ var EOSShellWobbly = GObject.registerClass({
     }
 
     grabbedByMouse() {
-        void this;
     }
 
     activate(event, detail) {
@@ -213,7 +210,6 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
     }
 
     vfunc_detach_effect(event, attachedEffect) {
-        void this;
         attachedEffect.remove();
     }
 
@@ -231,7 +227,6 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
     }
 
     vfunc_get_available_effects() {
-        void this;
         return new GLib.Variant('a{sv}',
             Object.keys(_ALLOWED_ANIMATIONS_FOR_EVENTS).reduce(
                 (acc, key) => {
@@ -255,7 +250,6 @@ const ShellWindowManagerAnimationsFactory = GObject.registerClass({
     Implements: [AnimationsDbus.ServerEffectFactory],
 }, class ShellWindowManagerAnimationsFactory extends GObject.Object {
     vfunc_create_effect(name) {
-        void this;
         switch (name) {
         case 'wobbly':
             return new ControllableShellWobblyEffect();

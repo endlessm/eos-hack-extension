@@ -230,8 +230,6 @@ var ClubhouseAnimator = class ClubhouseAnimator {
     }
 
     _getActivateDir(deployDir) {
-        void this;
-
         // Replace the hash part of the deploy directory by "active", so the directory
         // is always the most recent one (i.e. allows us to update the Clubhouse and
         // still have the right dir).
@@ -583,7 +581,6 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
     _onClicked() {
         // Do nothing because we don't want to activate the Clubhouse ATM
-        void this;
     }
 
     _setNextPage() {
@@ -1033,7 +1030,6 @@ var Component = GObject.registerClass({
     }
 
     _imageUsesClubhouse() {
-        void this;
         return Settings.get_boolean('hack-mode-enabled');
     }
 

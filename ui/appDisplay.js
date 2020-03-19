@@ -135,13 +135,11 @@ class HackAppIcon extends AppDisplay.AppIcon {
     }
 
     _canAccept() {
-        void this;
         return false;
     }
 
     // Override to avoid animation on launch
     animateLaunch() {
-        void this;
     }
 
     remove() {
@@ -150,7 +148,6 @@ class HackAppIcon extends AppDisplay.AppIcon {
     }
 
     get name() {
-        void this;
         return 'Hack';
     }
 
@@ -165,12 +162,10 @@ class HackAppIcon extends AppDisplay.AppIcon {
     }
 
     handleDragOver() {
-        void this;
         return DND.DragMotionResult.NO_DROP;
     }
 
     acceptDrop() {
-        void this;
         // This will catch the drop event and do nothing
         return true;
     }

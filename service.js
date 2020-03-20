@@ -64,7 +64,6 @@ var Service = class {
     }
 
     MinimizeAll() {
-        void this;
         global.get_window_actors().forEach(actor => {
             actor.metaWindow.minimize();
         });
@@ -79,7 +78,6 @@ var Service = class {
     }
 
     get FocusedApp() {
-        void this;
         let appId = '';
         const tracker = Shell.WindowTracker.get_default();
         if (tracker.focus_app)
@@ -88,82 +86,66 @@ var Service = class {
     }
 
     get HackModeEnabled() {
-        void this;
         return Settings.get_boolean('hack-mode-enabled');
     }
 
     set HackModeEnabled(enabled) {
-        void this;
         Settings.set_boolean('hack-mode-enabled', enabled);
     }
 
     get HackIconPulse() {
-        void this;
         return Settings.get_boolean('hack-icon-pulse');
     }
 
     set HackIconPulse(enabled) {
-        void this;
         Settings.set_boolean('hack-icon-pulse', enabled);
     }
 
     get ShowHackLauncher() {
-        void this;
         return Settings.get_boolean('show-hack-launcher');
     }
 
     set ShowHackLauncher(enabled) {
-        void this;
         Settings.set_boolean('show-hack-launcher', enabled);
     }
 
     get WobblyEffect() {
-        void this;
         return Settings.get_boolean('wobbly-effect');
     }
 
     set WobblyEffect(enabled) {
-        void this;
         Settings.set_boolean('wobbly-effect', enabled);
     }
 
     get WobblySpringK() {
-        void this;
         return Settings.get_double('wobbly-spring-k');
     }
 
     set WobblySpringK(value) {
-        void this;
         Settings.set_double('wobbly-spring-k', value);
     }
 
     get WobblySpringFriction() {
-        void this;
         return Settings.get_double('wobbly-spring-friction');
     }
 
     set WobblySpringFriction(value) {
-        void this;
         Settings.set_double('wobbly-spring-friction', value);
     }
 
     get WobblySlowdownFactor() {
-        void this;
         return Settings.get_double('wobbly-slowdown-factor');
     }
 
     set WobblySlowdownFactor(value) {
-        void this;
         Settings.set_double('wobbly-slowdown-factor', value);
     }
 
     get WobblyObjectMovementRange() {
-        void this;
         return Settings.get_double('wobbly-object-movement-range');
     }
 
     set WobblyObjectMovementRange(value) {
-        void this;
         Settings.set_double('wobbly-object-movement-range', value);
     }
 };

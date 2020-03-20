@@ -107,7 +107,6 @@ var SoundItem = class {
     }
 
     get Status() {
-        void this;
         return SoundItemStatusEnum;
     }
 

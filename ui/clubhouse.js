@@ -332,9 +332,7 @@ var ClubhouseNotificationBanner =
 class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
     constructor(notification) {
         super(notification);
-
-        this.setUseBodyMarkup(true);
-        this.setUseBodySimpleMarkup(false);
+        this._bodySimpleMarkup = true;
 
         // Whether it should animate when positioning it
         this._shouldSlideIn = true;
@@ -365,6 +363,9 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         this._closeButton.connect('clicked', () => {
             SoundServer.getDefault().play('clubhouse/dialog/close');
         });
+
+        this.setUseBodyMarkup(true);
+        this.setUseBodySimpleMarkup(false);
     }
 
     setBody(text) {
@@ -1176,9 +1177,9 @@ function _fixMarkup(text, allowMarkup, onlySimpleMarkup) {
 function setBody(text) {
     this._bodyText = text;
     this.bodyLabel.setMarkup(text ? text.replace(/\n/g, ' ') : '',
-        this._useBodyMarkup, this._bodySimpleMarkup);
+        this._useBodyMarkup, !!this._bodySimpleMarkup);
     if (this._expandedLabel)
-        this._expandedLabel.setMarkup(text, this._useBodyMarkup, this._bodySimpleMarkup);
+        this._expandedLabel.setMarkup(text, this._useBodyMarkup, !!this._bodySimpleMarkup);
 }
 
 function setUseBodySimpleMarkup(activate) {

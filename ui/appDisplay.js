@@ -144,7 +144,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     remove() {
         Settings.set_boolean('show-hack-launcher', false);
-        this._iconGridLayout.emit('changed');
+        this._iconGridLayout.emit('layout-changed');
     }
 
     get name() {
@@ -307,7 +307,7 @@ function enable() {
     });
 
     const iconGridLayout = IconGridLayout.getDefault();
-    iconGridLayout.emit('changed');
+    iconGridLayout.emit('layout-changed');
 }
 
 function disable() {
@@ -322,5 +322,5 @@ function disable() {
     Utils.restore(IconGridLayout.IconGridLayout);
 
     const iconGridLayout = IconGridLayout.getDefault();
-    iconGridLayout.emit('changed');
+    iconGridLayout.emit('layout-changed');
 }

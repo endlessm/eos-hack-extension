@@ -1,7 +1,7 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 /* exported enable, disable */
 
-const { Clutter, Gio, GLib, GObject, Gtk, Meta, Shell, St } = imports.gi;
+const { Clutter, Graphene, Gio, GLib, GObject, Gtk, Meta, Shell, St } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -1245,8 +1245,8 @@ var CodingSession = GObject.registerClass({
         // we have to set those after unmaximize/maximized otherwise they are lost
         newDst.rotation_angle_y = direction === Gtk.DirectionType.RIGHT ? -180 : 180;
         src.rotation_angle_y = 0;
-        newDst.pivot_point = new Clutter.Point({ x: 0.5, y: 0.5 });
-        src.pivot_point = new Clutter.Point({ x: 0.5, y: 0.5 });
+        newDst.pivot_point = new Graphene.Point({ x: 0.5, y: 0.5 });
+        src.pivot_point = new Graphene.Point({ x: 0.5, y: 0.5 });
 
         // Pre-create the effect if it hasn't been already
         this._setEffectsEnabled(src, false);

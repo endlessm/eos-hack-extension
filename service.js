@@ -270,7 +270,7 @@ function enable() {
 
         if (id === CLUBHOUSE_ID) {
             Settings.set_boolean('show-hack-launcher', true);
-            this._iconGridLayout.emit('changed');
+            this._iconGridLayout.emit('layout-changed');
             return;
         }
 
@@ -280,7 +280,7 @@ function enable() {
     Utils.override(ShellDBus.AppStoreService, 'AddAppIfNotVisible', function(id) {
         if (id === CLUBHOUSE_ID) {
             Settings.set_boolean('show-hack-launcher', true);
-            this._iconGridLayout.emit('changed');
+            this._iconGridLayout.emit('layout-changed');
             ShellDBus._reportAppAddedMetric(id);
             return;
         }
@@ -291,7 +291,7 @@ function enable() {
     Utils.override(ShellDBus.AppStoreService, 'RemoveApplication', function(id) {
         if (id === CLUBHOUSE_ID) {
             global.settings.set_boolean('show-hack-launcher', false);
-            this._iconGridLayout.emit('changed');
+            this._iconGridLayout.emit('layout-changed');
             return;
         }
 

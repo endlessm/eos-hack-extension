@@ -1,6 +1,6 @@
 /* exported enable, disable */
 
-const { Clutter, Gio, GLib, GObject, Pango, St } = imports.gi;
+const { Clutter, Graphene, Gio, GLib, GObject, Pango, St } = imports.gi;
 
 const AppDisplay = imports.ui.appDisplay;
 const IconGridLayout = imports.ui.iconGridLayout;
@@ -40,9 +40,9 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
         this._createInfoPopup();
 
-        this.actor.track_hover = true;
-        this.actor.connect('notify::hover', () => {
-            if (this.actor.hover) {
+        this.track_hover = true;
+        this.connect('notify::hover', () => {
+            if (this.hover) {
                 this._infoPopupId = GLib.timeout_add(
                     GLib.PRIORITY_DEFAULT,
                     300, () => {
@@ -121,7 +121,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
         return new St.Icon({
             gicon: gicon,
             icon_size: iconSize,
-            pivot_point: new Clutter.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
         });
     }
 
@@ -144,7 +144,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     remove() {
         Settings.set_boolean('show-hack-launcher', false);
-        this._iconGridLayout.emit('changed');
+        this._iconGridLayout.emit('layout-changed');
     }
 
     get name() {
@@ -181,7 +181,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     _createInfoPopup() {
         this._infoPopupId = null;
-        this._infoPopup = new PopupMenu.PopupMenu(this.actor, 0.5, St.Side.TOP, 0);
+        this._infoPopup = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP, 0);
         this._infoPopup.box.add_style_class_name('hack-tooltip');
         this._infoPopup.actor.add_style_class_name('hack-tooltip-arrow');
         this._infoMenuItem = new HackPopupMenuItem();
@@ -209,7 +209,7 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
         this.icon = new St.Icon({
             gicon: gicon,
             icon_size: 180,
-            pivot_point: new Clutter.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
             style_class: 'hack-tooltip-icon',
             x_align: Clutter.ActorAlign.CENTER,
         });
@@ -248,12 +248,12 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
 // Monkey patching
 const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
-// one icon for each AllView, there's two, the main and the gray
+// one icon for each AppDisplay, there's two, the main and the gray
 var HackIcons = {};
 
 function enable() {
-    Utils.override(AppDisplay.AllView, '_loadApps', function() {
-        const newApps = Utils.original(AppDisplay.AllView, '_loadApps').bind(this)();
+    Utils.override(AppDisplay.AppDisplay, '_loadApps', function() {
+        const newApps = Utils.original(AppDisplay.AppDisplay, '_loadApps').bind(this)();
 
         if (_shouldShowHackLauncher()) {
             if (!HackIcons[this])
@@ -307,7 +307,7 @@ function enable() {
     });
 
     const iconGridLayout = IconGridLayout.getDefault();
-    iconGridLayout.emit('changed');
+    iconGridLayout.emit('layout-changed');
 }
 
 function disable() {
@@ -318,9 +318,9 @@ function disable() {
     Utils.restore(AppDisplay.FolderIcon);
     Utils.restore(AppDisplay.AppIcon);
 
-    Utils.restore(AppDisplay.AllView);
+    Utils.restore(AppDisplay.AppDisplay);
     Utils.restore(IconGridLayout.IconGridLayout);
 
     const iconGridLayout = IconGridLayout.getDefault();
-    iconGridLayout.emit('changed');
+    iconGridLayout.emit('layout-changed');
 }

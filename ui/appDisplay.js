@@ -40,9 +40,9 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
         this._createInfoPopup();
 
-        this.actor.track_hover = true;
-        this.actor.connect('notify::hover', () => {
-            if (this.actor.hover) {
+        this.track_hover = true;
+        this.connect('notify::hover', () => {
+            if (this.hover) {
                 this._infoPopupId = GLib.timeout_add(
                     GLib.PRIORITY_DEFAULT,
                     300, () => {
@@ -181,7 +181,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     _createInfoPopup() {
         this._infoPopupId = null;
-        this._infoPopup = new PopupMenu.PopupMenu(this.actor, 0.5, St.Side.TOP, 0);
+        this._infoPopup = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP, 0);
         this._infoPopup.box.add_style_class_name('hack-tooltip');
         this._infoPopup.actor.add_style_class_name('hack-tooltip-arrow');
         this._infoMenuItem = new HackPopupMenuItem();

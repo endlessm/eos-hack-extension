@@ -16,8 +16,8 @@ Vcs-Git: https://github.com/hack/eos-hack-extension.git
 Package: eos-hack-extension
 Architecture: all
 Depends:
- gnome-shell (>= 3.33),
- gnome-shell (<< 3.35),
+ gnome-shell (>= 3.35),
+ gnome-shell (<< 3.37),
  ${shlibs:Depends},
  ${misc:Depends}
 Description: Endless OS Hack extension for GNOME Shell

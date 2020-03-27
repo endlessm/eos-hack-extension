@@ -1,6 +1,6 @@
 /* exported enable, disable */
 
-const { Clutter, Gio, GLib, GObject, Pango, St } = imports.gi;
+const { Clutter, Graphene, Gio, GLib, GObject, Pango, St } = imports.gi;
 
 const AppDisplay = imports.ui.appDisplay;
 const IconGridLayout = imports.ui.iconGridLayout;
@@ -121,7 +121,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
         return new St.Icon({
             gicon: gicon,
             icon_size: iconSize,
-            pivot_point: new Clutter.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
         });
     }
 
@@ -209,7 +209,7 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
         this.icon = new St.Icon({
             gicon: gicon,
             icon_size: 180,
-            pivot_point: new Clutter.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
             style_class: 'hack-tooltip-icon',
             x_align: Clutter.ActorAlign.CENTER,
         });

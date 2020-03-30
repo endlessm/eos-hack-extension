@@ -65,10 +65,11 @@ function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {
     return Shell.AppSystem.get_default().lookup_app(`${clubhouseId}.desktop`);
 }
 
-var ClubhouseAnimation = class ClubhouseAnimation extends Animation {
-    constructor(file, width, height, defaultDelay, frames) {
+var ClubhouseAnimation =  GObject.registerClass(
+class ClubhouseAnimation extends Animation {
+    _init(file, width, height, defaultDelay, frames) {
         const speed = defaultDelay || 200;
-        super(file, width, height, speed);
+        super._init(file, width, height, speed);
 
         this._frameIndex = 0;
         this._framesInfo = [];
@@ -179,9 +180,10 @@ var ClubhouseAnimation = class ClubhouseAnimation extends Animation {
         }
         return framesInfo;
     }
-};
+});
 
-var ClubhouseAnimator = class ClubhouseAnimator {
+var ClubhouseAnimator =
+class ClubhouseAnimator {
     constructor(proxy, clubhouseId) {
         this._proxy = proxy;
         this._animations = {};
@@ -310,7 +312,8 @@ var ClubhouseAnimator = class ClubhouseAnimator {
     }
 };
 
-var QuestBannerPosition = class QuestBannerPosition {
+var QuestBannerPosition =
+class QuestBannerPosition {
     constructor() {
         this._atBottom = false;
     }
@@ -328,10 +331,10 @@ var QuestBannerPosition = class QuestBannerPosition {
     }
 };
 
-var ClubhouseNotificationBanner =
+var ClubhouseNotificationBanner = GObject.registerClass(
 class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
-    constructor(notification) {
-        super(notification);
+    _init(notification) {
+        super._init(notification);
         this._bodySimpleMarkup = true;
 
         // Whether it should animate when positioning it
@@ -346,17 +349,17 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         this.expand(false);
         this._actionBin.visible = true;
 
-        this.actor.can_focus = true;
-        this.actor.track_hover = true;
+        this.can_focus = true;
+        this.track_hover = true;
 
         // Override the style name because this is a not a regular notification
-        this.actor.remove_style_class_name('notification-banner');
-        this.actor.add_style_class_name('clubhouse-notification');
+        this.remove_style_class_name('notification-banner');
+        this.add_style_class_name('clubhouse-notification');
         this._iconBin.add_style_class_name('clubhouse-notification-icon-bin');
         this._closeButton.add_style_class_name('clubhouse-notification-close-button');
 
         // Always wrap the body's text
-        this._expandedLabel.actor.add_style_class_name('clubhouse-notification-label');
+        this._expandedLabel.add_style_class_name('clubhouse-notification-label');
 
         this._rearrangeElements();
 
@@ -382,6 +385,12 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
     setIcon(actor) {
         actor.add_style_class_name('clubhouse-notification-image');
+        const actorParams = {
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.END,
+        };
+        Object.assign(actor, actorParams);
         super.setIcon(actor);
     }
 
@@ -396,10 +405,8 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         const vbox = hbox.get_parent();
 
         const wrapBin = new St.Bin({
-            x_fill: true,
-            y_fill: true,
-            x_align: St.Align.END,
-            y_align: St.Align.END,
+            x_align: Clutter.ActorAlign.FILL,
+            y_align: Clutter.ActorAlign.FILL,
             x_expand: true,
             y_expand: true,
         });
@@ -411,35 +418,31 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
             layout_manager: new Clutter.BinLayout(),
             x_align: Clutter.ActorAlign.FILL,
             y_align: Clutter.ActorAlign.END,
+            x_expand: true,
+            y_expand: true,
         });
         wrapBin.set_child(wrapWidget);
 
         const bodyStackParams = {
             y_expand: true,
-            y_fill: true,
             y_align: Clutter.ActorAlign.FILL,
         };
         Object.assign(this._bodyStack, bodyStackParams);
 
-        let secondaryBinParams = {
-            x_fill: false,
+        const secondaryBinParams = {
+            x_align: St.Align.END,
         };
         Object.assign(this._secondaryBin, secondaryBinParams);
 
         const iconBinParams = {
-            x_fill: false,
-            y_fill: false,
             x_expand: true,
             y_expand: true,
-            x_align: St.Align.END,
-            y_align: St.Align.END,
         };
         Object.assign(this._iconBin, iconBinParams);
 
         const contentBoxParams = {
             x_expand: true,
             y_expand: true,
-            y_fill: true,
             x_align: Clutter.ActorAlign.FILL,
             y_align: Clutter.ActorAlign.END,
         };
@@ -455,12 +458,11 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
         const expandedLabelActorParams = {
             y_expand: true,
-            y_fill: true,
             y_align: Clutter.ActorAlign.FILL,
         };
-        Object.assign(this._expandedLabel.actor, expandedLabelActorParams);
-        this._expandedLabel.actor.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
-        this._expandedLabel.actor.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        Object.assign(this._expandedLabel, expandedLabelActorParams);
+        this._expandedLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._expandedLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
 
         hbox.remove_child(contentBox);
         wrapWidget.add_child(contentBox);
@@ -479,11 +481,11 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
     _updateButtonsCss() {
         if (!this._buttonBox || this._buttonBox.get_children().length === 0) {
-            this.actor.remove_style_class_name('with-buttons');
+            this.remove_style_class_name('with-buttons');
             return;
         }
 
-        this.actor.add_style_class_name('with-buttons');
+        this.add_style_class_name('with-buttons');
 
         // @todo: This is a workaround for the missing CSS selector, :nth-child
         // Upstream issue: https://gitlab.gnome.org/GNOME/gnome-shell/issues/1800
@@ -533,7 +535,7 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
     }
 
     _repositionY() {
-        this.actor.y = CLUBHOUSE_BANNER_MARGIN;
+        this.y = CLUBHOUSE_BANNER_MARGIN;
     }
 
     reposition() {
@@ -541,26 +543,26 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         if (!monitor)
             return;
 
-        this.actor.x = monitor.x + monitor.width;
+        this.x = monitor.x + monitor.width;
 
-        const endX = this.actor.x - this.actor.width - CLUBHOUSE_BANNER_MARGIN;
+        const endX = this.x - this.width - CLUBHOUSE_BANNER_MARGIN;
 
         if (this._shouldSlideIn) {
             // If the banner is still sliding in, stop it (because we have a new position for it).
             // This should prevent the banner from not being set in the right position when the
             // Clubhouse is hidden while the banner is still sliding in.
-            this.actor.remove_all_transitions();
+            this.remove_all_transitions();
 
             // clipping the actor to avoid appearing in the right monitor
-            const endClip = new Clutter.Geometry({
+            const endClip = new Clutter.Rectangle({
                 x: 0,
                 y: 0,
-                width: this.actor.width + CLUBHOUSE_BANNER_MARGIN,
-                height: this.actor.height,
+                width: this.width + CLUBHOUSE_BANNER_MARGIN,
+                height: this.height,
             });
-            this.actor.set_clip(0, 0, 0, this.actor.height);
+            this.set_clip(0, 0, 0, this.height);
 
-            this.actor.ease({
+            this.ease({
                 x: endX,
                 duration: CLUBHOUSE_BANNER_ANIMATION_TIME,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
@@ -568,13 +570,13 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
                     this._shouldSlideIn = false;
                 },
             });
-            this.actor.ease_property('clip', endClip, {
+            this.ease_property('clip-rect', endClip, {
                 duration: CLUBHOUSE_BANNER_ANIMATION_TIME,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                onComplete: () => this.actor.remove_clip(),
+                onComplete: () => this.remove_clip(),
             });
         } else {
-            this.actor.x = endX;
+            this.x = endX;
         }
 
         this._repositionY();
@@ -620,55 +622,49 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
     _slideOut() {
         const monitor = Main.layoutManager.primaryMonitor;
         if (!monitor) {
-            this.actor.destroy();
-            this.actor = null;
+            this.destroy();
             return;
         }
 
         const endX = monitor.x + monitor.width;
 
         // clipping the actor to avoid appearing in the right monitor
-        const endClip = new Clutter.Geometry({
+        const endClip = new Clutter.Rectangle({
             x: 0,
             y: 0,
             width: 0,
-            height: this.actor.height,
+            height: this.height,
         });
-        this.actor.set_clip(0, 0, this.actor.width + CLUBHOUSE_BANNER_MARGIN, this.actor.height);
+        this.set_clip(0, 0, this.width + CLUBHOUSE_BANNER_MARGIN, this.height);
 
-        this.actor.ease({
+        this.ease({
             x: endX,
             clip: endClip,
             duration: CLUBHOUSE_BANNER_ANIMATION_TIME,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
-                this.actor.destroy();
-                this.actor = null;
+                this.destroy();
             },
         });
-        this.actor.ease_property('clip', endClip, {
+        this.ease_property('clip-rect', endClip, {
             duration: CLUBHOUSE_BANNER_ANIMATION_TIME,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
     }
 
     dismiss(shouldSlideOut) {
-        if (!this.actor)
-            return;
-
         if (shouldSlideOut) {
             this._slideOut();
             return;
         }
 
-        this.actor.destroy();
-        this.actor = null;
+        this.destroy();
     }
-};
+});
 
-var ClubhouseQuestBanner =
+var ClubhouseQuestBanner = GObject.registerClass(
 class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
-    constructor(notification, isFirstBanner, animator, position, callback) {
+    _init(notification, isFirstBanner, animator, position, callback) {
         const icon = notification.gicon;
         let imagePath = null;
 
@@ -678,7 +674,7 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
             notification.gicon = null;
         }
 
-        super(notification);
+        super._init(notification);
 
         this._upDownIcon = null;
         this._setupUpDownButton();
@@ -695,7 +691,7 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
                     return;
 
                 animation.play();
-                this.setIcon(animation.actor);
+                this.setIcon(animation);
                 callback(this);
             });
         }
@@ -728,8 +724,8 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
         });
         this._secondaryBin.add_actor(upDownButton);
 
-        this.actor.connect('notify::hover', () => {
-            if (this.actor.get_hover())
+        this.connect('notify::hover', () => {
+            if (this.get_hover())
                 upDownButton.add_style_class_name('visible');
             else
                 upDownButton.remove_style_class_name('visible');
@@ -747,7 +743,7 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
                 return 0;
 
             return (monitor.y + monitor.height
-                    - this.actor.height - CLUBHOUSE_BANNER_MARGIN
+                    - this.height - CLUBHOUSE_BANNER_MARGIN
                     - Main.panel.get_height());
         } else {
             return CLUBHOUSE_BANNER_MARGIN;
@@ -755,7 +751,7 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
     }
 
     _slideUpDown() {
-        this.actor.ease({
+        this.ease({
             // Note, we pass the opposite position because we are
             // toggling direction:
             y: this._getPositionY(!this._position.atBottom),
@@ -764,27 +760,27 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
             onComplete: () => {
                 this._position.toggle();
                 this._updateUpDownIcon();
-                if (this._bottomBanner && this._bottomBanner.actor)
+                if (this._bottomBanner && this._bottomBanner)
                     this._bottomBanner.reposition();
             },
         });
     }
 
     _repositionY() {
-        this.actor.y = this._getPositionY(this._position.atBottom);
+        this.y = this._getPositionY(this._position.atBottom);
     }
 
     reposition() {
         super.reposition();
         this._updateUpDownIcon();
     }
-};
+});
 
-var ClubhouseItemBanner =
+var ClubhouseItemBanner = GObject.registerClass(
 class ClubhouseItemBanner extends ClubhouseNotificationBanner {
-    constructor(notification, callback) {
-        super(notification);
-        this.actor.add_style_class_name('clubhouse-item-notification');
+    _init(notification, callback) {
+        super._init(notification);
+        this.add_style_class_name('clubhouse-item-notification');
         this._topBanner = null;
         callback(this);
     }
@@ -795,19 +791,19 @@ class ClubhouseItemBanner extends ClubhouseNotificationBanner {
     }
 
     _repositionY() {
-        if (this._topBanner && this._topBanner.actor && !this._topBanner._position.atBottom)
-            this.actor.y += this._topBanner.actor.height;
+        if (this._topBanner && !this._topBanner._position.atBottom)
+            this.y += this._topBanner.height;
         else
             super._repositionY();
     }
-};
+});
 
-var ClubhouseNotification =
+var ClubhouseNotification = GObject.registerClass(
 class ClubhouseNotification extends NotificationDaemon.GtkNotificationDaemonNotification {
-    constructor(source, notification) {
-        super(source, notification);
+    _init(source, notification) {
+        super._init(source, notification);
 
-        this.notificationId = notification.notificationId.unpack();
+	this.notificationId = notification.notificationId.unpack();
 
         // Avoid destroying the notification when clicking it
         this.setResident(true);
@@ -816,21 +812,21 @@ class ClubhouseNotification extends NotificationDaemon.GtkNotificationDaemonNoti
     createBanner(isFirstBanner, animator, position, callback) {
         return new ClubhouseQuestBanner(this, isFirstBanner, animator, position, callback);
     }
-};
+});
 
-var ClubhouseItemNotification =
+var ClubhouseItemNotification = GObject.registerClass(
 class ClubhouseItemNotification extends ClubhouseNotification {
-    constructor(source, notification) {
-        super(source, notification);
+    _init(source, notification) {
+        super._init(source, notification);
         this.setResident(false);
     }
 
     createBanner(callback) {
         return new ClubhouseItemBanner(this, callback);
     }
-};
+});
 
-var ClubhouseNotificationSource =
+var ClubhouseNotificationSource = GObject.registerClass(
 class ClubhouseNotificationSource extends NotificationDaemon.GtkNotificationDaemonAppSource {
     _createNotification(params) {
         const notificationId = params.notificationId.unpack();
@@ -845,7 +841,7 @@ class ClubhouseNotificationSource extends NotificationDaemon.GtkNotificationDaem
         // Never show the overview when calling an action on this source.
         this.activateActionFull(actionId, target, false);
     }
-};
+});
 
 // Enabling hack-mode for hack1 users
 function _migrateHack1() {
@@ -995,7 +991,7 @@ var Component = GObject.registerClass({
             return this._clubhouseSource;
 
         this._clubhouseSource = new ClubhouseNotificationSource(this._clubhouseId);
-        this._clubhouseSource.connect('notify', this._onNotify.bind(this));
+        this._clubhouseSource.connect('notification-show', this._onNotify.bind(this));
         this._clubhouseSource.connect('destroy', () => {
             this._clubhouseSource = null;
         });
@@ -1070,7 +1066,9 @@ var Component = GObject.registerClass({
     _onNotify(source, notification) {
         // @todo: Abstract the banner logic into the notifications themselves as much as possible
         // (to just keep track of when they're destroyed).
-        if (notification.notificationId === 'quest-message') {
+        const notificationId = notification.serialize().deep_unpack().notificationId.unpack();
+
+        if (notificationId === 'quest-message') {
             notification.connect('destroy', (n, reason) => {
                 if (reason !== MessageTray.NotificationDestroyedReason.REPLACED &&
                     reason !== MessageTray.NotificationDestroyedReason.SOURCE_CLOSED)
@@ -1082,21 +1080,21 @@ var Component = GObject.registerClass({
             if (!this._questBanner) {
                 this._questBanner = notification.createBanner(!this._hasForegroundQuest,
                     this._clubhouseAnimator, this._questBannerPosition, (banner) => {
-                        Main.layoutManager.addChrome(banner.actor);
+                        Main.layoutManager.addChrome(banner);
                         banner.reposition();
                         if (this._itemBanner)
                             this._itemBanner.reposition();
                     });
                 this._hasForegroundQuest = true;
             }
-        } else if (notification.notificationId === 'quest-item') {
+        } else if (notificationId === 'quest-item') {
             notification.connect('destroy', (_notification, _reason) => {
                 this._clearItemBanner();
             });
 
             if (!this._itemBanner) {
                 this._itemBanner = notification.createBanner((banner) => {
-                    Main.layoutManager.addChrome(banner.actor);
+                    Main.layoutManager.addChrome(banner);
                     banner.reposition();
                     if (this._questBanner)
                         this._questBanner.reposition();
@@ -1141,10 +1139,10 @@ var Component = GObject.registerClass({
 
     _syncVisibility() {
         if (this._questBanner)
-            this._questBanner.actor.visible = this._enabled;
+            this._questBanner.visible = this._enabled;
 
         if (this._itemBanner)
-            this._itemBanner.actor.visible = this._enabled;
+            this._itemBanner.visible = this._enabled;
     }
 });
 
@@ -1193,10 +1191,10 @@ function setUseBodySimpleMarkup(activate) {
 function setMarkup(text, allowMarkup, onlySimpleMarkup = true) {
     this._text = text ? _fixMarkup(text, allowMarkup, onlySimpleMarkup) : '';
 
-    this.actor.clutter_text.set_markup(this._text);
+    this.clutter_text.set_markup(this._text);
 
     /* clutter_text.text contain text without markup */
-    this._urls = Util.findUrls(this.actor.clutter_text.text);
+    this._urls = Util.findUrls(this.clutter_text.text);
     this._highlightUrls();
 }
 

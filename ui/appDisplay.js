@@ -256,10 +256,10 @@ function enable() {
         const newApps = Utils.original(AppDisplay.AppDisplay, '_loadApps').bind(this)();
 
         if (_shouldShowHackLauncher()) {
-            if (!HackIcons[this])
-                HackIcons[this] = new HackAppIcon();
+            if (!HackIcons[this._id])
+                HackIcons[this._id] = new HackAppIcon();
 
-            newApps.unshift(HackIcons[this]);
+            newApps.unshift(HackIcons[this._id]);
         }
 
         return newApps;

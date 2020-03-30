@@ -316,7 +316,9 @@ function disableWobblyFx(wm) {
         actor._animatableSurface = null;
     });
 
-    wm._wobblyEffect.destroy();
-    wm._wobblyEffect = null;
+    if (wm._wobblyEffect) {
+        wm._wobblyEffect.destroy();
+        wm._wobblyEffect = null;
+    }
     wm._animationsServer = null;
 }

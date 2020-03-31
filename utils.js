@@ -1,4 +1,4 @@
-/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings */
+/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap */
 
 const { Gio } = imports.gi;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
@@ -109,3 +109,56 @@ function restore(object) {
 function original(object, methodName) {
     return object._fnOverrides[methodName];
 }
+
+// We can't use WeakMap here because we need to iterate all items and it's not
+// recommendted to use objects as keys so this class is a helper class to
+// store all icons with AppDisplay object as keys.
+var ObjectsMap =
+class ObjectsMap {
+    constructor() {
+        this._keys = [];
+        this._values = [];
+    }
+
+    set(k, v) {
+        const index = this._keys.indexOf(k);
+        if (index < 0) {
+            this._keys.push(k);
+            this._values.push(v);
+        } else {
+            this._values[index] = v;
+        }
+    }
+
+    get(k) {
+        const index = this._keys.indexOf(k);
+        if (index < 0)
+            return undefined;
+
+        return this._values[index];
+    }
+
+    del(k) {
+        const index = this._keys.indexOf(k);
+        if (index < 0)
+            return;
+
+        this._keys.splice(index, 1);
+        this._values.splice(index, 1);
+    }
+
+    delValue(k) {
+        const index = this._values.indexOf(k);
+        if (index < 0)
+            return;
+
+        this._keys.splice(index, 1);
+        this._values.splice(index, 1);
+    }
+
+    forEach(f) {
+        this._keys.forEach((k, index) => {
+            f(k, this._values[index]);
+        });
+    }
+};

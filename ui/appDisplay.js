@@ -144,7 +144,8 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     remove() {
         Settings.set_boolean('show-hack-launcher', false);
-        this._iconGridLayout.emit('layout-changed');
+        const iconGridLayout = IconGridLayout.getDefault();
+        iconGridLayout.emit('layout-changed');
     }
 
     get name() {
@@ -249,24 +250,30 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
 const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 // one icon for each AppDisplay, there's two, the main and the gray
-var HackIcons = {};
+var HackIcons = new Utils.ObjectsMap();
 
 function enable() {
     Utils.override(AppDisplay.AppDisplay, '_loadApps', function() {
         const newApps = Utils.original(AppDisplay.AppDisplay, '_loadApps').bind(this)();
 
         if (_shouldShowHackLauncher()) {
-            if (!HackIcons[this._id])
-                HackIcons[this._id] = new HackAppIcon();
+            let icon = HackIcons.get(this);
+            if (!icon) {
+                icon = new HackAppIcon();
+                icon.connect('destroy', (i) => {
+                    HackIcons.delValue(i);
+                });
+                HackIcons.set(this, icon);
+            }
 
-            newApps.unshift(HackIcons[this._id]);
+            newApps.unshift(icon);
         }
 
         return newApps;
     });
     Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function(id) {
         if (id === CLUBHOUSE_ID) {
-            Object.keys(HackIcons).forEach(k => HackIcons[k].remove());
+            HackIcons.forEach((k, v) => v.remove());
             return;
         }
 
@@ -311,7 +318,7 @@ function enable() {
 }
 
 function disable() {
-    HackIcons = {};
+    HackIcons = new Utils.ObjectsMap();
 
     Utils.restore(AppDisplay.BaseAppView);
     Utils.restore(AppDisplay.ViewIcon);

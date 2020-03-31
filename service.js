@@ -290,7 +290,7 @@ function enable() {
 
     Utils.override(ShellDBus.AppStoreService, 'RemoveApplication', function(id) {
         if (id === CLUBHOUSE_ID) {
-            global.settings.set_boolean('show-hack-launcher', false);
+            Settings.set_boolean('show-hack-launcher', false);
             this._iconGridLayout.emit('layout-changed');
             return;
         }

@@ -269,13 +269,9 @@ function _flipButtonAroundRectCenter(props) {
         onRotationComplete,
     } = props;
 
-    // this API is deprecated but the best option here to
-    // animate around a point outside of the actor
-    button.rotation_center_y = new Clutter.Vertex({
-        x: rect.width * 0.5,
-        y: button.height * 0.5,
-        z: 0,
-    });
+    const oldWidth = button.width;
+    button.set_size(rect.width, button.height);
+    button.set_pivot_point(0.5, 0.5);
     button.rotation_angle_y = startAngle;
     button.ease_property('rotation_angle_y', midpointAngle, {
         duration: WINDOW_ANIMATION_TIME * 2,
@@ -287,6 +283,7 @@ function _flipButtonAroundRectCenter(props) {
                 duration: WINDOW_ANIMATION_TIME * 2,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => {
+                    button.set_size(oldWidth, button.height);
                     if (onRotationComplete)
                         onRotationComplete();
                 },
@@ -318,7 +315,7 @@ var WindowTrackingButton = GObject.registerClass({
             FLIP_BUTTON_WIDTH,
             FLIP_BUTTON_HEIGHT,
             FLIP_BUTTON_PULSE_SPEED);
-        this._pulseIcon = this._pulseAnimation.actor;
+        this._pulseIcon = this._pulseAnimation;
     }
 
     get highlighted() {

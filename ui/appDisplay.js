@@ -24,19 +24,16 @@ function _shouldShowHackLauncher() {
 var HackAppIcon = GObject.registerClass(
 class HackAppIcon extends AppDisplay.AppIcon {
     _init() {
-        const viewIconParams = {
+        const iconParams = {
             isDraggable: true,
             showMenu: true,
-        };
-
-        const iconParams = {
             createIcon: this._createIcon.bind(this),
         };
 
         const app = Clubhouse.getClubhouseApp();
         this._activated = false;
 
-        super._init(app, viewIconParams, iconParams);
+        super._init(app, iconParams);
 
         this._createInfoPopup();
 

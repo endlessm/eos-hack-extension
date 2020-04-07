@@ -286,14 +286,6 @@ function enable() {
         return Utils.original(AppDisplay.BaseAppView, '_canAccept').bind(this)(source);
     });
 
-    Utils.override(AppDisplay.ViewIcon, '_canAccept', source => {
-        // Disable movement of the HackAppIcon
-        if (source instanceof HackAppIcon)
-            return false;
-
-        return true;
-    });
-
     Utils.override(AppDisplay.FolderIcon, '_canAccept', function(source) {
         // Disable movement of the HackAppIcon
         if (source instanceof HackAppIcon)
@@ -318,7 +310,6 @@ function disable() {
     HackIcons = new Utils.ObjectsMap();
 
     Utils.restore(AppDisplay.BaseAppView);
-    Utils.restore(AppDisplay.ViewIcon);
     Utils.restore(AppDisplay.FolderIcon);
     Utils.restore(AppDisplay.AppIcon);
 

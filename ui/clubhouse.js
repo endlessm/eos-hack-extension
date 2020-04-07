@@ -340,11 +340,6 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         // Whether it should animate when positioning it
         this._shouldSlideIn = true;
 
-        this._setNextPage();
-
-        if (this._textPages.length > 1)
-            this._setupNextPageButton();
-
         // We don't have an "unexpanded" state for now
         this.expand(false);
         this._actionBin.visible = true;
@@ -369,6 +364,11 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
         this.setUseBodyMarkup(true);
         this.setUseBodySimpleMarkup(false);
+
+        this._setNextPage();
+
+        if (this._textPages.length > 1)
+            this._setupNextPageButton();
     }
 
     setBody(text) {
@@ -1176,8 +1176,11 @@ function setBody(text) {
     this._bodyText = text;
     this.bodyLabel.setMarkup(text ? text.replace(/\n/g, ' ') : '',
         this._useBodyMarkup, !!this._bodySimpleMarkup);
-    if (this._expandedLabel)
+
+    if (this._expandedLabel) {
+        this._expandedLabel.text = '';
         this._expandedLabel.setMarkup(text, this._useBodyMarkup, !!this._bodySimpleMarkup);
+    }
 }
 
 function setUseBodySimpleMarkup(activate) {

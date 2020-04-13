@@ -268,13 +268,13 @@ function enable() {
 
         return newApps;
     });
-    Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function(id) {
+    Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function(id, interactive) {
         if (id === CLUBHOUSE_ID) {
             HackIcons.forEach((k, v) => v.remove());
             return;
         }
 
-        Utils.original(IconGridLayout.IconGridLayout, 'removeIcon').bind(this)(id);
+        Utils.original(IconGridLayout.IconGridLayout, 'removeIcon').bind(this)(id, interactive);
     });
 
     // Disable movements

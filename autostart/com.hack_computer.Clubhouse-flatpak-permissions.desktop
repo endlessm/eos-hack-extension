@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Hack Clubhouse Permissions
+Comment=Sets the default flatpak permissions for the Hack Clubhouse
+# FIXME: Workaround for the lack of system-level defaults for flatpak permissions
+# See https://github.com/flatpak/xdg-desktop-portal/issues/471
+# and https://phabricator.endlessm.com/T29677
+Exec=/usr/bin/sh -c "export FLATPAK_FANCY_OUTPUT=0; if ! flatpak permission-list background background | grep -q '[[:space:]]com.hack_computer.Clubhouse[[:space:]]'; then flatpak permission-set background background com.hack_computer.Clubhouse yes || true; fi"
+OnlyShowIn=GNOME;
+X-GNOME-Autostart-Phase=Application

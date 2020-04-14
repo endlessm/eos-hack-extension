@@ -51,6 +51,8 @@ install_subdir('data', install_dir: join_paths(extensiondir, uuid))
 install_subdir('misc', install_dir: join_paths(extensiondir, uuid))
 install_subdir('ui', install_dir: join_paths(extensiondir, uuid))
 
+install_subdir('autostart', install_dir: join_paths(datadir, 'gnome'), strip_directory: false)
+
 glib_compile = find_program('glib-compile-schemas', required: true)
 schemas_files = []
 foreach s : schemas

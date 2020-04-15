@@ -1,6 +1,6 @@
 /* exported enable, disable */
 
-const { Clutter, Graphene, Gio, GLib, GObject, Pango, St } = imports.gi;
+const { Clutter, Graphene, Gio, GLib, GObject, Pango, Shell, St } = imports.gi;
 
 const AppDisplay = imports.ui.appDisplay;
 const IconGridLayout = imports.ui.iconGridLayout;

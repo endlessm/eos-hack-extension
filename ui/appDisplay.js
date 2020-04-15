@@ -271,6 +271,30 @@ function enable() {
     Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function(id, interactive) {
         if (id === CLUBHOUSE_ID) {
             HackIcons.forEach((k, v) => v.remove());
+
+            let info = null;
+            let appSystem = Shell.AppSystem.get_default();
+            let app = appSystem.lookup_alias(id);
+            if (app)
+                info = app.get_app_info();
+
+            // undo action
+            if (interactive) {
+                let options = { forFeedback: true,
+                                destroyCallback: () => this._onMessageDestroy(info),
+                                undoCallback: () => {
+                                    this._removeUndone = true;
+                                    Settings.set_boolean('show-hack-launcher', true);
+                                    this.emit('layout-changed');
+                                },
+                              };
+
+                Main.overview.setMessage(_("%s has been removed").format('Hack'),
+                                         options);
+            } else {
+                this._onMessageDestroy(info);
+            }
+
             return;
         }
 

@@ -1814,11 +1814,12 @@ function disable() {
     Utils.restore(Workspace.Workspace);
 
     Main.wm._codeViewManager = null;
-    Wobbly.disableWobblyFx(Main.wm);
 
-    WM_HANDLERS.forEach(handler => {
+    while (WM_HANDLERS.length) {
+        const handler = WM_HANDLERS.pop();
         global.window_manager.disconnect(handler);
-    });
+    }
+    Wobbly.disableWobblyFx(Main.wm);
 
     global.display.disconnect(GRAB_BEGIN);
     global.display.disconnect(GRAB_END);

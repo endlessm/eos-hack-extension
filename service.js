@@ -15,6 +15,7 @@ const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 var Service = class {
     constructor() {
+        this._settingsHandlers = [];
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
         Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.hack',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
@@ -26,41 +27,52 @@ var Service = class {
             return;
         }
 
-        Shell.WindowTracker.get_default().connect('notify::focus-app',
+        this._windowTrackId = Shell.WindowTracker.get_default().connect('notify::focus-app',
             this._checkFocusAppChanged.bind(this));
-        Settings.connect('changed::hack-mode-enabled', () => {
+        this._settingsHandlers.push(Settings.connect('changed::hack-mode-enabled', () => {
             this._dbusImpl.emit_property_changed('HackModeEnabled',
                 new GLib.Variant('b', this.HackModeEnabled));
-        });
-        Settings.connect('changed::hack-icon-pulse', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::hack-icon-pulse', () => {
             this._dbusImpl.emit_property_changed('HackIconPulse',
                 new GLib.Variant('b', this.HackIconPulse));
-        });
-        Settings.connect('changed::show-hack-launcher', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::show-hack-launcher', () => {
             this._dbusImpl.emit_property_changed('ShowHackLauncher',
                 new GLib.Variant('b', this.ShowHackLauncher));
-        });
+        }));
 
-        Settings.connect('changed::wobbly-effect', () => {
+        this._settingsHandlers.push(Settings.connect('changed::wobbly-effect', () => {
             this._dbusImpl.emit_property_changed('WobblyEffect',
                 new GLib.Variant('b', this.WobblyEffect));
-        });
-        Settings.connect('changed::wobbly-spring-k', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::wobbly-spring-k', () => {
             this._dbusImpl.emit_property_changed('WobblySpringK',
                 new GLib.Variant('d', this.WobblySpringK));
-        });
-        Settings.connect('changed::wobbly-spring-friction', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::wobbly-spring-friction', () => {
             this._dbusImpl.emit_property_changed('WobblySpringFriction',
                 new GLib.Variant('d', this.WobblySpringFriction));
-        });
-        Settings.connect('changed::wobbly-slowdown-factor', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::wobbly-slowdown-factor', () => {
             this._dbusImpl.emit_property_changed('WobblySlowdownFactor',
                 new GLib.Variant('d', this.WobblySlowdownFactor));
-        });
-        Settings.connect('changed::wobbly-object-movement-range', () => {
+        }));
+        this._settingsHandlers.push(Settings.connect('changed::wobbly-object-movement-range', () => {
             this._dbusImpl.emit_property_changed('WobblyObjectMovementRange',
                 new GLib.Variant('d', this.WobblyObjectMovementRange));
-        });
+        }));
+    }
+
+    stop() {
+        this._settingsHandlers.forEach((handler) => Settings.disconnect(handler));
+        Shell.WindowTracker.get_default().disconnect(this._windowTrackId);
+
+        try {
+            this._dbusImpl.unexport();
+        } catch (e) {
+            logError(e, 'Cannot unexport Hack service');
+        }
     }
 
     MinimizeAll() {
@@ -156,7 +168,7 @@ var HackableApp = class {
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppIface, this);
 
         this._session = session;
-        this._session.connect('notify::state', this._stateChanged.bind(this));
+        this._notifyStateId = this._session.connect('notify::state', this._stateChanged.bind(this));
     }
 
     export(objectId) {
@@ -168,7 +180,8 @@ var HackableApp = class {
         }
     }
 
-    unexport() {
+    stop() {
+        this._session.disconnect(this._notifyStateId);
         this._dbusImpl.unexport();
     }
 
@@ -225,10 +238,22 @@ var HackableAppsManager = class {
         }
 
         this._codeViewManager = Main.wm._codeViewManager;
-        this._codeViewManager.connect('session-added', this._onSessionAdded.bind(this));
-        this._codeViewManager.connect('session-removed', this._onSessionRemoved.bind(this));
+        this._sessionAddedId = this._codeViewManager.connect('session-added', this._onSessionAdded.bind(this));
+        this._sessionRemovedId = this._codeViewManager.connect('session-removed', this._onSessionRemoved.bind(this));
 
         this._nextId = 0;
+    }
+
+    stop() {
+        this._codeViewManager.disconnect(this._sessionAddedId);
+        this._codeViewManager.disconnect(this._sessionRemovedId);
+
+        try {
+            this._dbusImpl.unexport();
+        } catch (e) {
+            logError(e, 'Cannot unexport HackableAppsManager');
+            return;
+        }
     }
 
     _emitCurrentlyHackableAppsChanged() {
@@ -246,7 +271,7 @@ var HackableAppsManager = class {
     }
 
     _onSessionRemoved(_, session) {
-        session.hackableApp.unexport();
+        session.hackableApp.stop();
         this._emitCurrentlyHackableAppsChanged();
     }
 
@@ -302,9 +327,13 @@ function enable() {
 function disable() {
     Utils.restore(ShellDBus.AppStoreService);
 
-    if (SHELL_DBUS_SERVICE)
+    if (SHELL_DBUS_SERVICE) {
+        SHELL_DBUS_SERVICE.stop();
         SHELL_DBUS_SERVICE = null;
+    }
 
-    if (HACKABLE_APPS_MANAGER_SERVICE)
+    if (HACKABLE_APPS_MANAGER_SERVICE) {
+        HACKABLE_APPS_MANAGER_SERVICE.stop();
         HACKABLE_APPS_MANAGER_SERVICE = null;
+    }
 }

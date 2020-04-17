@@ -1,7 +1,11 @@
-/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap */
+/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext */
 
 const { Gio } = imports.gi;
+const Gettext = imports.gettext;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
+
+Gettext.textdomain('hack-extension')
+var gettext = Gettext.gettext;
 
 function getMigrationSettings() {
     const dir = Extension.dir.get_child('migration').get_path();

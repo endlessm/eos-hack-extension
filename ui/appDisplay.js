@@ -197,9 +197,9 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
         this.style_class = 'hack-popup-menu-item';
 
         /* Translators: The 'Endless Hack' is not translatable, it's the brand name */
-        const title = _('Endless Hack: Unlock infinite possibilities through coding');
+        const title = _("Endless Hack: Unlock infinite possibilities through coding");
         /* Translators: The 'Hack' is not translatable, it's the brand name */
-        const description = _('Hack is a new learning platform from Endless, focused on teaching the foundations of programming and creative problem-solving to kids, ages 10 and up. With 5 different pathways, Hack has a variety of activities that teach a wide range of skills and concepts - check it out!');
+        const description = _("Hack is a new learning platform from Endless, focused on teaching the foundations of programming and creative problem-solving to kids, ages 10 and up. With 5 different pathways, Hack has a variety of activities that teach a wide range of skills and concepts - check it out!");
         const image = `file://${Hack.path}/data/icons/hack-tooltip.png`;
         const iconFile = Gio.File.new_for_uri(image);
         const gicon = new Gio.FileIcon({ file: iconFile });

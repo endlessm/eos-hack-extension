@@ -19,6 +19,14 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 
+// Translation support
+const Gettext = imports.gettext;
+
+Gettext.textdomain("eos-hack@endlessm.com");
+Gettext.bindtextdomain("eos-hack@endlessm.com", ExtensionSystem.extensionMeta["eos-hack@endlessm.com"].path + "/locale");
+
+const _ = Gettext.gettext;
+
 // To import custom files
 const { appDisplay, clubhouse, codeView } = Hack.imports.ui;
 const { tryMigrateSettings } = Hack.imports.utils;

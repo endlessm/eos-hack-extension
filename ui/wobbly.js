@@ -232,7 +232,7 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
                 (acc, key) => {
                     acc[key] = new GLib.Variant('as', _ALLOWED_ANIMATIONS_FOR_EVENTS[key]);
                     return acc;
-                }, {}),
+                }, {})
         );
     }
 });

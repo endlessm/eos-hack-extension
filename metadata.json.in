@@ -1,7 +1,7 @@
 {
 "uuid": "@uuid@",
 "name": "Hack",
-"description": "Add a the flip to hack experience to the desktop",
+"description": "Add the Flip to Hack experience to the desktop",
 "settings-schema": "@settings_schema@",
 "shell-version": ["@shell_version@"],
 "url": "https://github.com/endlessm/eos-hack-extension"

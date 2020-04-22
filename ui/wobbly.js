@@ -275,15 +275,7 @@ var SETTINGS_HANDLER = null;
 
 function initAnimationsDbus(wm) {
     AnimationsDbus.Server.new_async(new ShellWindowManagerAnimationsFactory(), null, (initable, result) => {
-        try {
-            wm._animationsServer = AnimationsDbus.Server.new_finish(initable, result);
-        } catch (e) {
-            // Too soon, maybe the com.endlessm.Libanimation dbus name is not free yet.
-            // This happens when disable/enable the extension in a few seconds.
-            // Let's try again in a few seconds
-            GLib.timeout_add(GLib.PRIORITY_LOW, 3000, initAnimationsDbus.bind(this, wm));
-            return;
-        }
+        wm._animationsServer = AnimationsDbus.Server.new_finish(initable, result);
 
         // Go through all the available windows and create an
         // AnimationsDbusServerSurface for it.
@@ -315,8 +307,6 @@ function initAnimationsDbus(wm) {
         SETTINGS_HANDLER = Settings.connect('changed::wobbly-effect', actionWobblyEffectSetting);
         actionWobblyEffectSetting(Settings, 'wobbly-effect');
     });
-
-    return GLib.SOURCE_REMOVE;
 }
 
 function enableWobblyFx(wm) {
@@ -342,7 +332,7 @@ function disableWobblyFx(wm) {
         wm._animationsManager = null;
     }
     if (wm._animationsServer) {
-        wm._animationsServer.unref();
+        wm._animationsServer.stop(null);
         wm._animationsServer = null;
     }
 }

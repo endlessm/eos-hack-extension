@@ -203,7 +203,7 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
         if (effects.indexOf(effect.name) === -1) {
             throw new GLib.Error(AnimationsDbus.error_quark(),
                 AnimationsDbus.Error.UNSUPPORTED_EVENT_FOR_ANIMATION_EFFECT,
-                `Effect ${effect.name} can't be used on event ${event}`);
+                `Effect ${effect.name} can’t be used on event ${event}`);
         }
 
         return effect.bridge.createActorPrivate(this.actor);

@@ -17,7 +17,7 @@ var Service = class {
     constructor() {
         this._settingsHandlers = [];
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
-        Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.hack',
+        this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.hack',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
 
         try {
@@ -72,6 +72,11 @@ var Service = class {
             this._dbusImpl.unexport();
         } catch (e) {
             logError(e, 'Cannot unexport Hack service');
+        }
+
+        if (this._nameId != 0) {
+            Gio.bus_unown_name(this._nameId);
+            this._nameId = 0;
         }
     }
 
@@ -227,7 +232,7 @@ const HackableAppsManagerIface = Utils.loadInterfaceXML('com.hack_computer.Hacka
 var HackableAppsManager = class {
     constructor() {
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppsManagerIface, this);
-        Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.HackableAppsManager',
+        this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.HackableAppsManager',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
 
         try {
@@ -253,6 +258,11 @@ var HackableAppsManager = class {
         } catch (e) {
             logError(e, 'Cannot unexport HackableAppsManager');
             return;
+        }
+
+        if (this._nameId != 0) {
+            Gio.bus_unown_name(this._nameId);
+            this._nameId = 0;
         }
     }
 

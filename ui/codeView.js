@@ -1404,6 +1404,11 @@ var CodeViewManager = GObject.registerClass({
         global.window_manager.connect('stop', () => {
             this._stopped = true;
         });
+
+        // enable FtH for all windows!
+        global.get_window_actors().forEach(actor => {
+            this.handleMapWindow(actor);
+        });
     }
 
     get sessions() {

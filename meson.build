@@ -12,6 +12,9 @@ extra_sources = [
   'COPYING',
 ]
 
+i18n = import('i18n')
+subdir('locale')
+
 schemas = ['com.endlessm.hack-extension']
 
 uuid = 'eos-hack@endlessm.com'

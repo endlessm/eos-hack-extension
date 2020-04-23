@@ -1393,10 +1393,7 @@ var CodeViewManager = GObject.registerClass({
                     session._syncButtonVisibility();
                 });
             } else {
-                this._sessions.forEach(session => {
-                    const eventType = SessionDestroyEvent.SESSION_DESTROY_APP_DESTROYED;
-                    this._removeSession(session, eventType);
-                });
+                this.removeSessions();
             }
         });
 
@@ -1404,6 +1401,22 @@ var CodeViewManager = GObject.registerClass({
         global.window_manager.connect('stop', () => {
             this._stopped = true;
         });
+
+        // enable FtH for all windows!
+        global.get_window_actors().forEach(actor => {
+            this.handleMapWindow(actor);
+        });
+    }
+
+    removeSessions() {
+        while (this._sessions.length > 0) {
+            let session = this._sessions[0];
+            // flip back the app actor
+            session.app.rotation_angle_y = 0;
+            session._setEffectsEnabled(session.app, false);
+            const eventType = SessionDestroyEvent.SESSION_DESTROY_APP_DESTROYED;
+            this._removeSession(session, eventType);
+        }
     }
 
     get sessions() {
@@ -1700,7 +1713,7 @@ function _windowUngrabbed(display, op, win) {
         return;
 
     const actor = win.get_compositor_private();
-    if (!actor._animatableSurface)
+    if (!actor || !actor._animatableSurface)
         return;
 
     // This is an event that may cause an animation on the window
@@ -1813,12 +1826,14 @@ function disable() {
     Utils.restore(AppIconBar.AppIconButton);
     Utils.restore(Workspace.Workspace);
 
+    Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
-    Wobbly.disableWobblyFx(Main.wm);
 
-    WM_HANDLERS.forEach(handler => {
+    while (WM_HANDLERS.length) {
+        const handler = WM_HANDLERS.pop();
         global.window_manager.disconnect(handler);
-    });
+    }
+    Wobbly.disableWobblyFx(Main.wm);
 
     global.display.disconnect(GRAB_BEGIN);
     global.display.disconnect(GRAB_END);

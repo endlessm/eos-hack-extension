@@ -203,7 +203,7 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
         if (effects.indexOf(effect.name) === -1) {
             throw new GLib.Error(AnimationsDbus.error_quark(),
                 AnimationsDbus.Error.UNSUPPORTED_EVENT_FOR_ANIMATION_EFFECT,
-                `Effect ${effect.name} can't be used on event ${event}`);
+                `Effect ${effect.name} can’t be used on event ${event}`);
         }
 
         return effect.bridge.createActorPrivate(this.actor);
@@ -232,7 +232,7 @@ var ShellWindowManagerAnimatableSurface = GObject.registerClass({
                 (acc, key) => {
                     acc[key] = new GLib.Variant('as', _ALLOWED_ANIMATIONS_FOR_EVENTS[key]);
                     return acc;
-                }, {}),
+                }, {})
         );
     }
 });
@@ -273,7 +273,7 @@ function getAnimatableWindowActors() {
 
 var SETTINGS_HANDLER = null;
 
-function enableWobblyFx(wm) {
+function initAnimationsDbus(wm) {
     AnimationsDbus.Server.new_async(new ShellWindowManagerAnimationsFactory(), null, (initable, result) => {
         wm._animationsServer = AnimationsDbus.Server.new_finish(initable, result);
 
@@ -309,16 +309,30 @@ function enableWobblyFx(wm) {
     });
 }
 
+function enableWobblyFx(wm) {
+    initAnimationsDbus(wm);
+}
+
 function disableWobblyFx(wm) {
     Settings.disconnect(SETTINGS_HANDLER);
 
     getAnimatableWindowActors().forEach(actor => {
-        actor._animatableSurface = null;
+        if (actor._animatableSurface) {
+            wm._animationsServer.unregister_surface(actor._animatableSurface);
+            actor._animatableSurface = null;
+        }
     });
 
     if (wm._wobblyEffect) {
         wm._wobblyEffect.destroy();
         wm._wobblyEffect = null;
     }
-    wm._animationsServer = null;
+    if (wm._animationsManager) {
+        wm._animationsManager.unexport();
+        wm._animationsManager = null;
+    }
+    if (wm._animationsServer) {
+        wm._animationsServer.stop(null);
+        wm._animationsServer = null;
+    }
 }

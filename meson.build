@@ -1,6 +1,6 @@
-project('hack-extension',
+project('hack-extension', 'c',
   version: '3.8.0',
-  meson_version: '>= 0.40.0'
+  meson_version: '>= 0.47.0'
 )
 
 sources = [
@@ -106,3 +106,5 @@ if extension_tool.found()
 
   run_target('zip-file', command: command)
 endif
+
+subdir('src')

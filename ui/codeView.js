@@ -1,7 +1,7 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 /* exported enable, disable */
 
-const { Clutter, Graphene, Gio, GLib, GObject, Gtk, Meta, Shell, St } = imports.gi;
+const { Clutter, Graphene, Gio, GLib, GObject, Gtk, Hackfx, Meta, Shell, St } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -34,12 +34,12 @@ const FLIP_BUTTON_PULSE_SPEED = 100;
 const _HACK_SHADER_MAP = {
     none: null,
     desaturate: {
-        constructor: Shell.CodeViewEffect,
+        constructor: Hackfx.CodeViewEffect,
         colors: ['#05213f', '#031c39', '#00275c', '#8d6531', '#f4f1a2'],
         points: [0.00, 0.07, 0.32, 0.65, 1.00],
     },
     fizzics: {
-        constructor: Shell.CodeViewEffect,
+        constructor: Hackfx.CodeViewEffect,
         colors: ['#05213f', '#031c39', '#114283', '#b27220', '#f4f1a2'],
         points: [0.00, 0.10, 0.20, 0.60, 1.00],
     },

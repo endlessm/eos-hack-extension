@@ -1710,10 +1710,13 @@ var CodeViewManager = GObject.registerClass({
 // Monkey patching
 
 const AltTab = imports.ui.altTab;
-const AppIconBar = imports.ui.appIconBar;
 const Workspace = imports.ui.workspace;
-const Wobbly = Hack.imports.ui.wobbly;
-const SideComponent = imports.ui.sideComponent;
+
+if (Utils.is('endless')) {
+    const SideComponent = imports.ui.sideComponent;
+    const AppIconBar = imports.ui.appIconBar;
+    const Wobbly = Hack.imports.ui.wobbly;
+}
 
 function getWindows(workspace) {
     // We ignore skip-taskbar windows in switchers, but if they are attached
@@ -1802,7 +1805,7 @@ function mapWindow(shellwm, actor) {
         }
     }
 
-    if (SideComponent.isSideComponentWindow(actor.meta_window))
+    if (Utils.is('endless') && SideComponent.isSideComponentWindow(actor.meta_window))
         return;
 
     if (actor._windowType === Meta.WindowType.NORMAL && !isSplashWindow)
@@ -1834,37 +1837,41 @@ function enable() {
         },
     });
 
-    Utils.override(AppIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
     Main.wm._codeViewManager = new CodeViewManager();
-    Main.wm._animationsServer = null;
-    Main.wm._wobblyEffect = null;
-    Wobbly.enableWobblyFx(Main.wm);
 
-    _wmConnect('kill-window-effects', (shellwm, actor) => {
-        Main.wm._codeViewManager.killEffectsOnActor(actor);
-    });
-    _wmConnect('map', (shellwm, actor) => {
-        // Endless libanimation extension
-        if (Main.wm._animationsServer) {
-            actor._animatableSurface = Main.wm._animationsServer.register_surface(
-                new Wobbly.ShellWindowManagerAnimatableSurface(actor));
-        }
+    if (Utils.is('endless')) {
+        Utils.override(AppIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
 
-        // Add the wobbly effect if it is enabled
-        if (Main.wm._wobblyEffect) {
-            actor._animatableSurface.attach_animation_effect_with_server_priority(
-                'move', Main.wm._wobblyEffect);
-        }
-    });
+        Main.wm._animationsServer = null;
+        Main.wm._wobblyEffect = null;
+        Wobbly.enableWobblyFx(Main.wm);
 
-    _wmConnect('destroy', (shellwm, actor) => {
-        if (actor._animatableSurface) {
-            Main.wm._animationsServer.unregister_surface(actor._animatableSurface);
-            actor._animatableSurface = null;
-        }
-    });
+        _wmConnect('kill-window-effects', (shellwm, actor) => {
+            Main.wm._codeViewManager.killEffectsOnActor(actor);
+        });
+        _wmConnect('map', (shellwm, actor) => {
+            // Endless libanimation extension
+            if (Main.wm._animationsServer) {
+                actor._animatableSurface = Main.wm._animationsServer.register_surface(
+                    new Wobbly.ShellWindowManagerAnimatableSurface(actor));
+            }
+
+            // Add the wobbly effect if it is enabled
+            if (Main.wm._wobblyEffect) {
+                actor._animatableSurface.attach_animation_effect_with_server_priority(
+                    'move', Main.wm._wobblyEffect);
+            }
+        });
+
+        _wmConnect('destroy', (shellwm, actor) => {
+            if (actor._animatableSurface) {
+                Main.wm._animationsServer.unregister_surface(actor._animatableSurface);
+                actor._animatableSurface = null;
+            }
+        });
+    }
 
     GRAB_BEGIN = global.display.connect('grab-op-begin', _windowGrabbed.bind(Main.wm));
     GRAB_END = global.display.connect('grab-op-end', _windowUngrabbed.bind(Main.wm));
@@ -1884,17 +1891,20 @@ function disable() {
         },
     });
 
-    Utils.restore(AppIconBar.AppIconButton);
     Utils.restore(Workspace.Workspace);
 
     Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
 
+    if (Utils.is('endless')) {
+        Utils.restore(AppIconBar.AppIconButton);
+        Wobbly.disableWobblyFx(Main.wm);
+    }
+
     while (WM_HANDLERS.length) {
         const handler = WM_HANDLERS.pop();
         global.window_manager.disconnect(handler);
     }
-    Wobbly.disableWobblyFx(Main.wm);
 
     global.display.disconnect(GRAB_BEGIN);
     global.display.disconnect(GRAB_END);

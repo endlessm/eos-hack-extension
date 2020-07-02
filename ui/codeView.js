@@ -1730,11 +1730,19 @@ function getWindows(workspace) {
     }).filter((w, i, a) => !w._hackIsInactiveWindow && !w.skip_taskbar && a.indexOf(w) === i);
 }
 
+function is_speedwagon_window(metaWindow) {
+    if (!Utils.is('endless')) {
+        return false;
+    }
+
+    return Shell.WindowTracker.is_speedwagon_window(metaWindow);
+}
+
 function getInterestingWindows() {
     let windows = this._app.get_windows();
     let hasSpeedwagon = false;
     windows = windows.filter(metaWindow => {
-        hasSpeedwagon = hasSpeedwagon || Shell.WindowTracker.is_speedwagon_window(metaWindow);
+        hasSpeedwagon = hasSpeedwagon || is_speedwagon_window(metaWindow);
         return !metaWindow.is_skip_taskbar() && !metaWindow._hackIsInactiveWindow;
     });
     return [windows, hasSpeedwagon];
@@ -1791,13 +1799,13 @@ function _windowUngrabbed(display, op, win) {
 function mapWindow(shellwm, actor) {
     actor._windowType = actor.meta_window.get_window_type();
     const metaWindow = actor.meta_window;
-    const isSplashWindow = Shell.WindowTracker.is_speedwagon_window(metaWindow);
+    const isSplashWindow = is_speedwagon_window(metaWindow);
 
     if (!isSplashWindow) {
         // If we have an active splash window for the app, don't animate it.
         const tracker = Shell.WindowTracker.get_default();
         const app = tracker.get_window_app(metaWindow);
-        const hasSplashWindow = app && app.get_windows().some(w => Shell.WindowTracker.is_speedwagon_window(w));
+        const hasSplashWindow = app && app.get_windows().some(w => is_speedwagon_window(w));
         if (hasSplashWindow) {
             if (!this._codeViewManager.handleMapWindow(actor))
                 shellwm.completed_map(actor);

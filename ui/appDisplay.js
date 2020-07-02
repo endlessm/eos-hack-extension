@@ -7,7 +7,6 @@ const IconGridLayout = imports.ui.iconGridLayout;
 const DND = imports.ui.dnd;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
-const ParentalControlsManager = imports.misc.parentalControlsManager;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -15,11 +14,10 @@ const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 const _ = Hack.imports.utils.gettext;
 
-const Clubhouse = Hack.imports.ui.clubhouse;
-
 function _shouldShowHackLauncher() {
+    const ParentalControlsManager = imports.misc.parentalControlsManager;
     const parentalControlsManager = ParentalControlsManager.getDefault();
-    const app = Clubhouse.getClubhouseApp();
+    const app = Utils.getClubhouseApp();
 
     // Only show the hack icon if the clubhouse app is in the system
     const show = Settings.get_boolean('show-hack-launcher');
@@ -35,7 +33,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
             createIcon: this._createIcon.bind(this),
         };
 
-        const app = Clubhouse.getClubhouseApp();
+        const app = Utils.getClubhouseApp();
         this._activated = false;
 
         super._init(app, iconParams);

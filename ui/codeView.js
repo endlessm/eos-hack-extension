@@ -9,7 +9,6 @@ const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 
 const { Animation } = imports.ui.animation;
-const Clubhouse = Hack.imports.ui.clubhouse;
 const Main = imports.ui.main;
 const Params = imports.misc.params;
 const Soundable = Hack.imports.ui.soundable;
@@ -119,7 +118,7 @@ const _ensureHackDataFile = (function() {
         if (initialized)
             return keyfile;
 
-        const componentsId = Clubhouse.getClubhouseApp() ? 'com.hack_computer.Clubhouse' : 'com.endlessm.HackComponents';
+        const componentsId = Utils.getClubhouseApp() ? 'com.hack_computer.Clubhouse' : 'com.endlessm.HackComponents';
         const flatpakPath = `app/${componentsId}/current/active/files`;
         const fileRelPath = 'share/hack-components';
         const searchPaths = flatpakInstallationPaths.map(installation =>
@@ -1507,7 +1506,7 @@ var CodeViewManager = GObject.registerClass({
     }
 
     _isClubhouseInstalled() {
-        return Clubhouse.getClubhouseApp() || Clubhouse.getClubhouseApp('com.endlessm.Clubhouse');
+        return Utils.getClubhouseApp() || Utils.getClubhouseApp('com.endlessm.Clubhouse');
     }
 
     handleMapWindow(actor) {

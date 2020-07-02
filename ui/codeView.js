@@ -47,6 +47,8 @@ const _HACK_SHADER_MAP = {
     },
 };
 const _HACK_DEFAULT_SHADER = 'desaturate';
+// Green color for the flip to hack app effect
+const _HACK_BACK_COLOR = new Clutter.Color({ red: 22, green: 176, blue: 136 });
 
 const HackableIface = `
 <node>
@@ -831,10 +833,17 @@ var CodingSession = GObject.registerClass({
             if (!shaderEffect)
                 shaderEffect = _HACK_DEFAULT_SHADER;
 
-            const shaderDef = _HACK_SHADER_MAP[shaderEffect];
-            if (shaderDef) {
-                effect = new shaderDef.constructor({ enabled });
-                effect.set_gradient_stops(shaderDef.colors, shaderDef.points);
+            if (Shell.CodeViewEffect) {
+                const shaderDef = _HACK_SHADER_MAP[shaderEffect];
+                if (shaderDef) {
+                    effect = new shaderDef.constructor({ enabled });
+                    effect.set_gradient_stops(shaderDef.colors, shaderDef.points);
+                }
+            } else {
+                effect = new Clutter.ColorizeEffect({ tint: _HACK_BACK_COLOR, enabled });
+            }
+
+            if (effect) {
                 actor.add_effect_with_name('codeview-effect', effect);
             }
         }

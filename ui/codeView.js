@@ -856,9 +856,12 @@ var CodingSession = GObject.registerClass({
         this._sizeChangedIdToolbox =
             this.toolbox.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
-        this._constrainGeometryIdToolbox =
-            this.toolbox.meta_window.connect('geometry-allocate',
-                this._constrainGeometry.bind(this));
+        // FIXME: Sync toolbox window
+        if (Utils.is('endless')) {
+            this._constrainGeometryIdToolbox =
+                this.toolbox.meta_window.connect('geometry-allocate',
+                    this._constrainGeometry.bind(this));
+        }
         this._notifyVisibleIdToolbox =
             this.toolbox.connect('notify::visible',
                 this._syncButtonVisibility.bind(this));
@@ -892,9 +895,12 @@ var CodingSession = GObject.registerClass({
         this._sizeChangedIdApp =
             this.app.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
-        this._constrainGeometryIdApp =
-            this.app.meta_window.connect('geometry-allocate',
-                this._constrainGeometry.bind(this));
+        // FIXME: Sync app window
+        if (Utils.is('endless')) {
+            this._constrainGeometryIdApp =
+                this.app.meta_window.connect('geometry-allocate',
+                    this._constrainGeometry.bind(this));
+        }
         this._notifyVisibleIdApp =
             this.app.connect('notify::visible',
                 this._syncButtonVisibility.bind(this));
@@ -1459,9 +1465,11 @@ var CodeViewManager = GObject.registerClass({
         });
 
         this._stopped = false;
-        global.window_manager.connect('stop', () => {
-            this._stopped = true;
-        });
+        if (Utils.is('endless')) {
+            global.window_manager.connect('stop', () => {
+                this._stopped = true;
+            });
+        }
 
         // enable FtH for all windows!
         global.get_window_actors().forEach(actor => {

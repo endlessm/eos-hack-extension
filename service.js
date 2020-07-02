@@ -300,6 +300,10 @@ function enable() {
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 
+    if (!Utils.is('endless')) {
+        return;
+    }
+
     Utils.override(ShellDBus.AppStoreService, 'AddApplication', function(id) {
         ShellDBus._reportAppAddedMetric(id);
 
@@ -335,7 +339,9 @@ function enable() {
 }
 
 function disable() {
-    Utils.restore(ShellDBus.AppStoreService);
+    if (Utils.is('endless')) {
+        Utils.restore(ShellDBus.AppStoreService);
+    }
 
     if (SHELL_DBUS_SERVICE) {
         SHELL_DBUS_SERVICE.stop();

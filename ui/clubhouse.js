@@ -23,7 +23,7 @@
 
 /* exported enable, disable */
 
-const { Clutter, Flatpak, Gio, GLib, GObject, Json, Pango, Shell, St } = imports.gi;
+const { Clutter, Flatpak, Gio, GLib, GObject, Json, Pango, St } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -60,10 +60,6 @@ const CLUBHOUSE_ICONS_FOR_EMOJI = {
     '👍': 'clubhouse-thumbsup-symbolic.svg',
     '👎': 'clubhouse-thumbsdown-symbolic.svg',
 };
-
-function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {
-    return Shell.AppSystem.get_default().lookup_app(`${clubhouseId}.desktop`);
-}
 
 var ClubhouseAnimation =  GObject.registerClass(
 class ClubhouseAnimation extends Animation {
@@ -904,7 +900,7 @@ var Component = GObject.registerClass({
     }
 
     getClubhouseApp() {
-        return getClubhouseApp(this._clubhouseId);
+        return Utils.getClubhouseApp(this._clubhouseId);
     }
 
     _ensureProxy() {

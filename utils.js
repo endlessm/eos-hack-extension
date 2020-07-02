@@ -1,6 +1,6 @@
 /* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext */
 
-const { Gio, GLib } = imports.gi;
+const { Gio, GLib, Shell } = imports.gi;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
@@ -199,4 +199,8 @@ function is(name) {
 
     _currentDesktopsMatches[name] = false;
     return false;
+}
+
+function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {
+    return Shell.AppSystem.get_default().lookup_app(`${clubhouseId}.desktop`);
 }

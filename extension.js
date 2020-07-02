@@ -20,24 +20,33 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 
 // To import custom files
-const { appDisplay, clubhouse, codeView } = Hack.imports.ui;
-const { tryMigrateSettings } = Hack.imports.utils;
+const { ui } = Hack.imports;
+const { tryMigrateSettings, is } = Hack.imports.utils;
 const Service = Hack.imports.service;
 
 function enable() {
     tryMigrateSettings();
 
-    appDisplay.enable();
-    clubhouse.enable();
-    codeView.enable();
+    // Only enable if we're in EOS
+    if (is('endless')) {
+        // Hack desktop icon
+        ui.appDisplay.enable();
+        // Hack clubhouse desktop notifications
+        ui.clubhouse.enable();
+    }
+    // Flip to hack
+    ui.codeView.enable();
 
+    // DBus API
     Service.enable();
 }
 
 function disable() {
-    appDisplay.disable();
-    clubhouse.disable();
-    codeView.disable();
+    if (is('endless')) {
+        ui.appDisplay.disable();
+        ui.clubhouse.disable();
+    }
+    ui.codeView.disable();
 
     Service.disable();
 }

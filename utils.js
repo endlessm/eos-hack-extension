@@ -1,6 +1,6 @@
 /* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext */
 
-const { Gio } = imports.gi;
+const { Gio, GLib } = imports.gi;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
@@ -165,3 +165,38 @@ class ObjectsMap {
         });
     }
 };
+
+let _currentDesktopsMatches = {};
+// is:
+// @name: desktop string you want to assert if it matches the current desktop env
+//
+// The function examples XDG_CURRENT_DESKTOP and return if the current desktop
+// is part of that desktop string.
+//
+// Return value: if the environment isn't set or doesn't match, return False
+// otherwise, return True.
+//
+// This function is a copy of:
+// https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
+function is(name) {
+    if (_currentDesktopsMatches[name] !== undefined) {
+        return _currentDesktopsMatches[name];
+    }
+
+    let desktopsEnv = GLib.getenv('XDG_CURRENT_DESKTOP');
+    if (!desktopsEnv) {
+        _currentDesktopsMatches[name] = false;
+        return false;
+    }
+
+    let desktops = desktopsEnv.split(":");
+    for (let i = 0; i < desktops.length; i++) {
+        if (desktops[i] === name) {
+            _currentDesktopsMatches[name] = true;
+            return true;
+        }
+    }
+
+    _currentDesktopsMatches[name] = false;
+    return false;
+}

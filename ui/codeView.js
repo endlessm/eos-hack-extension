@@ -30,6 +30,9 @@ const FLIP_BUTTON_WIDTH = 66;
 const FLIP_BUTTON_HEIGHT = 124;
 const FLIP_BUTTON_PULSE_SPEED = 100;
 
+const OLD_HACK_TOOLBOX_ID = "com.endlessm.HackToolbox.Toolbox";
+const HACK_TOOLBOX_ID = "com.hack_computer.HackToolbox.Toolbox";
+
 const _HACK_SHADER_MAP = {
     none: null,
     desaturate: {
@@ -89,8 +92,67 @@ function _getWindowId(win) {
     return 'window:%d'.format(win.get_stable_sequence());
 }
 
+function _getHackToolboxProxy(win) {
+    let hackToolboxId = HACK_TOOLBOX_ID;
+
+    // This will work only on EndlessOS
+    if (Shell.WindowTracker.get_hack_toolbox_proxy) {
+        return Shell.WindowTracker.get_hack_toolbox_proxy(win);
+    }
+
+    /* Check if there is a set application id and object path
+     * on this window. If not, then it can't be a toolbox. */
+    const windowAppId = win.get_gtk_application_id();
+    const windowObjectPath = win.get_gtk_window_object_path();
+
+    if (!windowAppId || !windowObjectPath) {
+        return null;
+    }
+
+    /* Not a bus name, no way that this could be a toolbox */
+    if (!Gio.dbus_is_name(windowAppId)) {
+        return null;
+    }
+
+    /* Check if the app starts with com.endlessm for old hack apps and in that
+     * case we will use the old toolbox, in other case we'll use the
+     * com.hack_computer.HackToolbox */
+    if (windowAppId.startsWith('com.endlessm')) {
+        hackToolboxId = OLD_HACK_TOOLBOX_ID;
+    }
+
+    let proxy = null;
+    try {
+        proxy = Gio.DBusProxy.new_sync(Gio.DBus.session,
+                                       Gio.DBusProxyFlags.DO_NOT_AUTO_START |
+                                       Gio.DBusProxyFlags.DO_NOT_CONNECT_SIGNALS,
+                                       null,
+                                       windowAppId,
+                                       windowObjectPath,
+                                       hackToolboxId,
+                                       null);
+    } catch (e) {
+        logError(e, `Error while constructing the DBus proxy for ${windowAppId}`);
+        return null;
+    }
+
+    const targetPropertyVariant = proxy.get_cached_property('Target');
+    if (!targetPropertyVariant) {
+        return null;
+    }
+
+    const [targetAppId, targetWindowId] = targetPropertyVariant.deep_unpack();
+
+    if (!targetAppId || !targetWindowId) {
+        log(`Invalid Target property on Hack Toolbox: ${targetAppId} ${targetWindowId}`);
+        return null;
+    }
+
+    return proxy;
+}
+
 function _getToolboxTarget(win) {
-    const proxy = Shell.WindowTracker.get_hack_toolbox_proxy(win);
+    const proxy = _getHackToolboxProxy(win);
     const variant = proxy.get_cached_property('Target');
     const [targetAppId, targetWindowId] = variant.deep_unpack();
     return [targetAppId, targetWindowId];
@@ -1553,7 +1615,7 @@ var CodeViewManager = GObject.registerClass({
 
         // It might be a "HackToolbox". Check that, and if so,
         // add it to the window group for the window.
-        const proxy = Shell.WindowTracker.get_hack_toolbox_proxy(actor.meta_window);
+        const proxy = _getHackToolboxProxy(actor.meta_window);
         let handled = false;
 
         // This is a new proxy window, make it join the session

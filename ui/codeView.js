@@ -12,6 +12,7 @@ const { Animation } = imports.ui.animation;
 const Main = imports.ui.main;
 const Params = imports.misc.params;
 const Soundable = Hack.imports.ui.soundable;
+const WobblyFx = Hack.imports.ui.wobblyFx;
 const Service = Hack.imports.service;
 const SoundServer = Hack.imports.misc.soundServer;
 
@@ -1732,7 +1733,6 @@ const Workspace = imports.ui.workspace;
 if (Utils.is('endless')) {
     const SideComponent = imports.ui.sideComponent;
     const AppIconBar = imports.ui.appIconBar;
-    const Wobbly = Hack.imports.ui.wobbly;
 }
 
 function getWindows(workspace) {
@@ -1868,35 +1868,9 @@ function enable() {
 
     if (Utils.is('endless')) {
         Utils.override(AppIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
-
-        Main.wm._animationsServer = null;
-        Main.wm._wobblyEffect = null;
-        Wobbly.enableWobblyFx(Main.wm);
-
-        _wmConnect('kill-window-effects', (shellwm, actor) => {
-            Main.wm._codeViewManager.killEffectsOnActor(actor);
-        });
-        _wmConnect('map', (shellwm, actor) => {
-            // Endless libanimation extension
-            if (Main.wm._animationsServer) {
-                actor._animatableSurface = Main.wm._animationsServer.register_surface(
-                    new Wobbly.ShellWindowManagerAnimatableSurface(actor));
-            }
-
-            // Add the wobbly effect if it is enabled
-            if (Main.wm._wobblyEffect) {
-                actor._animatableSurface.attach_animation_effect_with_server_priority(
-                    'move', Main.wm._wobblyEffect);
-            }
-        });
-
-        _wmConnect('destroy', (shellwm, actor) => {
-            if (actor._animatableSurface) {
-                Main.wm._animationsServer.unregister_surface(actor._animatableSurface);
-                actor._animatableSurface = null;
-            }
-        });
     }
+
+    WobblyFx.enable();
 
     GRAB_BEGIN = global.display.connect('grab-op-begin', _windowGrabbed.bind(Main.wm));
     GRAB_END = global.display.connect('grab-op-end', _windowUngrabbed.bind(Main.wm));
@@ -1923,8 +1897,9 @@ function disable() {
 
     if (Utils.is('endless')) {
         Utils.restore(AppIconBar.AppIconButton);
-        Wobbly.disableWobblyFx(Main.wm);
     }
+
+    WobblyFx.disable();
 
     while (WM_HANDLERS.length) {
         const handler = WM_HANDLERS.pop();

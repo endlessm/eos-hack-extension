@@ -1730,11 +1730,6 @@ var CodeViewManager = GObject.registerClass({
 const AltTab = imports.ui.altTab;
 const Workspace = imports.ui.workspace;
 
-if (Utils.is('endless')) {
-    const SideComponent = imports.ui.sideComponent;
-    const AppIconBar = imports.ui.appIconBar;
-}
-
 function getWindows(workspace) {
     // We ignore skip-taskbar windows in switchers, but if they are attached
     // to their parent, their position in the MRU list may be more appropriate
@@ -1753,6 +1748,17 @@ function is_speedwagon_window(metaWindow) {
     }
 
     return Shell.WindowTracker.is_speedwagon_window(metaWindow);
+}
+
+function addButton(app) {
+    const [win, ] = app.get_windows();
+    const proxy = _getHackToolboxProxy(win);
+    // This is a toolbox! we don't want to show toolboxes in the icon bar
+    if (proxy) {
+        return;
+    }
+
+    Utils.original(imports.ui.appIconBar.ScrolledIconList, '_addButton').bind(this)(app);
 }
 
 function getInterestingWindows() {
@@ -1830,7 +1836,7 @@ function mapWindow(shellwm, actor) {
         }
     }
 
-    if (Utils.is('endless') && SideComponent.isSideComponentWindow(actor.meta_window))
+    if (Utils.is('endless') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
         return;
 
     if (actor._windowType === Meta.WindowType.NORMAL && !isSplashWindow)
@@ -1867,7 +1873,8 @@ function enable() {
     Main.wm._codeViewManager = new CodeViewManager();
 
     if (Utils.is('endless')) {
-        Utils.override(AppIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
+        Utils.override(imports.ui.appIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
+        Utils.override(imports.ui.appIconBar.ScrolledIconList, '_addButton', addButton);
     }
 
     WobblyFx.enable();
@@ -1896,7 +1903,8 @@ function disable() {
     Main.wm._codeViewManager = null;
 
     if (Utils.is('endless')) {
-        Utils.restore(AppIconBar.AppIconButton);
+        Utils.restore(imports.ui.appIconBar.AppIconButton);
+        Utils.restore(imports.ui.appIconBar.ScrolledIconList);
     }
 
     WobblyFx.disable();

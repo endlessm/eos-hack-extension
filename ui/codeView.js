@@ -508,6 +508,7 @@ var CodingSession = GObject.registerClass({
         this._appRemovedActor = null;
         this.appRemovedByFlipBack = false;
 
+        this._raisedIdToolbox = 0;
         this._positionChangedIdApp = 0;
         this._positionChangedIdToolbox = 0;
         this._sizeChangedIdApp = 0;
@@ -859,7 +860,14 @@ var CodingSession = GObject.registerClass({
         this._toolboxAppActionGroup.list_actions();
     }
 
+    _toolboxRaised() {
+        global.window_group.set_child_below_sibling(this.app, this.toolbox);
+    }
+
     _setupToolboxWindow() {
+        this._raisedIdToolbox =
+            this.toolbox.meta_window.connect('raised',
+                this._toolboxRaised.bind(this));
         this._positionChangedIdToolbox =
             this.toolbox.meta_window.connect('position-changed',
                 this._synchronizeWindows.bind(this));
@@ -875,12 +883,20 @@ var CodingSession = GObject.registerClass({
         this._notifyVisibleIdToolbox =
             this.toolbox.connect('notify::visible',
                 this._syncButtonVisibility.bind(this));
+
+        const windowTracker = Shell.WindowTracker.get_default();
+        this._toolboxApp = windowTracker.get_window_app(this.toolbox.meta_window);
     }
 
     _cleanupToolboxWindow() {
         if (this._positionChangedIdToolbox) {
             this.toolbox.meta_window.disconnect(this._positionChangedIdToolbox);
             this._positionChangedIdToolbox = 0;
+        }
+
+        if (this._raisedIdToolbox) {
+            this.toolbox.meta_window.disconnect(this._raisedIdToolbox);
+            this._raisedIdToolbox = 0;
         }
 
         if (this._sizeChangedIdToolbox) {
@@ -1042,6 +1058,7 @@ var CodingSession = GObject.registerClass({
         if (this.toolbox && !this.toolbox.is_destroyed()) {
             const toolboxWindow = this.toolbox.meta_window;
             this.toolbox = null;
+            this._toolboxApp = null;
 
             if (eventType !== SessionDestroyEvent.SESSION_DESTROY_TOOLBOX_DESTROYED)
                 toolboxWindow.delete(global.get_current_time());
@@ -1281,10 +1298,15 @@ var CodingSession = GObject.registerClass({
             this._setEffectsEnabled(actor, true);
         }
 
-        // Ensure correct stacking order by activating the window that just got focus.
-        // shell_app_activate_window() will raise all the other windows of the app
-        // while preserving stacking order.
-        this._shellApp.activate_window(focusedActor.meta_window, global.get_current_time());
+        if (focusedActor === this.toolbox) {
+            this.app.meta_window.raise();
+            this._toolboxApp.activate_window(this.toolbox.meta_window, global.get_current_time());
+        } else {
+            // Ensure correct stacking order by activating the window that just got focus.
+            // shell_app_activate_window() will raise all the other windows of the app
+            // while preserving stacking order.
+            this._shellApp.activate_window(focusedActor.meta_window, global.get_current_time());
+        }
     }
 
     _prepareAnimate(src, oldDst, newDst, direction) {

@@ -2,6 +2,7 @@
 /* exported enable, disable */
 
 const { Clutter, Graphene, Gio, GLib, GObject, Gtk, Meta, Shell, St } = imports.gi;
+const SwitcherPopup = imports.ui.switcherPopup;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -575,6 +576,10 @@ var CodingSession = GObject.registerClass({
         return this._state;
     }
 
+    get flipped() {
+        return this.state === CodingSessionStateEnum.TOOLBOX;
+    }
+
     set toolbox(value) {
         this._cleanupToolboxWindow();
         this._toolbox = value;
@@ -861,7 +866,13 @@ var CodingSession = GObject.registerClass({
     }
 
     _toolboxRaised() {
-        global.window_group.set_child_below_sibling(this.app, this.toolbox);
+        this.toolbox.meta_window.block_signal_handler(this._raisedIdToolbox);
+        if (this.flipped) {
+            // Ensure that the app is behind the toolbox
+            this.app.meta_window.raise();
+            this.toolbox.meta_window.raise();
+        }
+        this.toolbox.meta_window.unblock_signal_handler(this._raisedIdToolbox);
     }
 
     _setupToolboxWindow() {
@@ -1761,7 +1772,72 @@ function getWindows(workspace) {
     return windows.map(w => {
         return w.is_attached_dialog() ? w.get_transient_for() : w;
     // ... and filter out hack inactive, skip-taskbar windows and duplicates
-    }).filter((w, i, a) => !w._hackIsInactiveWindow && !w.skip_taskbar && a.indexOf(w) === i);
+    }).filter((w, i, a) => !w.skip_taskbar && a.indexOf(w) === i);
+}
+
+global.apps = [];
+function getWindowsForApp(app) {
+    const windowTracker = Shell.WindowTracker.get_default();
+    const settings = new Gio.Settings({ schema_id: 'org.gnome.shell.app-switcher' });
+
+    let workspace = null;
+    if (settings.get_boolean('current-workspace-only')) {
+        const workspaceManager = global.workspace_manager;
+        workspace = workspaceManager.get_active_workspace();
+    }
+
+    const allWindows = global.display.get_tab_list(Meta.TabList.NORMAL, workspace);
+    global.allWindows = allWindows;
+    global.apps.push(app);
+
+    const sessions = Main.wm._codeViewManager.sessions;
+    const appSession = sessions.find(s => s._shellApp === app);
+    const toolboxSession = sessions.find(s => s._toolboxApp === app);
+
+    const wins = allWindows.filter(w => {
+        if (toolboxSession && toolboxSession.toolbox.meta_window === w) {
+            return false;
+        }
+
+        if (appSession && appSession.toolbox && appSession.toolbox.meta_window === w) {
+            return true;
+        }
+
+        if (appSession && appSession.flipped && appSession.app.meta_window === w) {
+            return false;
+        }
+
+        return windowTracker.get_window_app(w) == app;
+    });
+    return wins;
+}
+
+function activateWindow(window, time, workspaceNum) {
+    let win = window;
+    const sessions = Main.wm._codeViewManager.sessions;
+    const session = sessions.find(s => s.app && s.app.meta_window === win);
+    const toolboxSession = sessions.find(s => s.toolbox && s.toolbox.meta_window === win);
+    const activate = Utils.original(Main, 'activateWindow').bind(this);
+
+    // If the app is flipped we should activate the toolbox window
+    if (session && session.flipped) {
+        win = session.toolbox.meta_window;
+    }
+
+    activate(win, time, workspaceNum);
+}
+
+function switcherFinish(timestamp) {
+    const appIcon = this._items[this._selectedIndex];
+
+    if (this._currentWindow < 0) {
+        Main.activateWindow(appIcon.cachedWindows[0], timestamp);
+        Main.overview.hide();
+    } else if (appIcon.cachedWindows[this._currentWindow]) {
+        Main.activateWindow(appIcon.cachedWindows[this._currentWindow], timestamp);
+    }
+
+    SwitcherPopup.SwitcherPopup.prototype._finish.bind(this)(timestamp);
 }
 
 function is_speedwagon_window(metaWindow) {
@@ -1790,6 +1866,26 @@ function getInterestingWindows() {
         hasSpeedwagon = hasSpeedwagon || is_speedwagon_window(metaWindow);
         return !metaWindow.is_skip_taskbar() && !metaWindow._hackIsInactiveWindow;
     });
+
+    // Add Toolbox windows!
+    const sessions = Main.wm._codeViewManager.sessions;
+    const appSession = sessions.find(s => s._shellApp === this._app);
+    if (appSession && appSession.toolbox && !appSession.toolbox._hackIsInactiveWindow) {
+        if (!windows.includes(appSession.toolbox.meta_window)) {
+            windows.push(appSession.toolbox.meta_window);
+        }
+    }
+
+    windows = windows.filter(metaWindow => !metaWindow._hackIsInactiveWindow);
+
+    // don't show toolbox windows on clubhouse APP
+    if (this._app.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse') {
+        windows = windows.filter(win => {
+            const gtkId = win.get_gtk_application_id();
+            return gtkId === 'com.hack_computer.Clubhouse';
+        });
+    }
+
     return [windows, hasSpeedwagon];
 }
 
@@ -1879,16 +1975,20 @@ function _wmConnect(signal, fn) {
 }
 
 function enable() {
+    // override alt-tab switchers
     Utils.override(AltTab, 'getWindows', getWindows);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
         get: function() {
             const cached = this._cachedWindows || [];
             return cached.filter(win => !win._hackIsInactiveWindow);
         },
-        set: function(windowList) {
-            this._cachedWindows = windowList;
+        set: function() {
+            // Setting always the custom list of windows to hack toolbox and app linked
+            this._cachedWindows = getWindowsForApp(this.app);
         },
     });
+    Utils.override(Main, 'activateWindow', activateWindow);
+    Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
@@ -1910,6 +2010,8 @@ function enable() {
 
 function disable() {
     Utils.restore(AltTab);
+    Utils.restore(Main);
+    Utils.restore(AltTab.AppSwitcherPopup);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
         get: function() {
             return this._cachedWindows;

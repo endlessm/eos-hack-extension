@@ -131,7 +131,18 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     activate(button) {
         Settings.set_boolean('hack-icon-pulse', false);
-        super.activate(button);
+
+        // We should activate the clubhouse using the DBus API because some
+        // toolbox windows shares the same app so activating the app could not
+        // show the clubhouse window sometimes.
+        const params = GLib.Variant.new('(a{sv})', [{}]);
+        Gio.DBus.session.call('com.hack_computer.Clubhouse',
+                              '/com/hack_computer/Clubhouse',
+                              'org.gtk.Application',
+                              'Activate', params, null,
+                              Gio.DBusCallFlags.NONE,
+                              -1, null,
+                              (conn, res) => conn.call_finish(res));
     }
 
     _canAccept() {
@@ -190,6 +201,20 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
         this._infoPopup.actor.hide();
         Main.uiGroup.add_actor(this._infoPopup.actor);
+    }
+
+    _updateRunningStyle() {
+        const running = this.app.state != Shell.AppState.STOPPED;
+        global.hack = this.app;
+
+        // Only show the dot if the clubhouse window is visible
+        const windows = this.app.get_windows();
+        const clubhouse = windows.find(w => w.get_gtk_application_id() === 'com.hack_computer.Clubhouse');
+
+        if (running && clubhouse)
+            this._dot.show();
+        else
+            this._dot.hide();
     }
 });
 

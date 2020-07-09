@@ -1859,6 +1859,26 @@ function addButton(app) {
     Utils.original(imports.ui.appIconBar.ScrolledIconList, '_addButton').bind(this)(app);
 }
 
+function focusWindowChanged() {
+    const currentWindow = global.display.focus_window;
+    const sessions = Main.wm._codeViewManager.sessions;
+    const toolbox = sessions.find(s => s.toolbox && s.toolbox.meta_window === currentWindow);
+
+    if (!toolbox) {
+        // it could be the clubhouse
+        const windowTracker = Shell.WindowTracker.get_default();
+        const focusApp = windowTracker.focus_app;
+        if (focusApp.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse') {
+            Main.panel.statusArea['appIcons']._setActiveApp(focusApp);
+        }
+        return;
+    }
+
+    // If it's a toolbox the active app is the corresponding shellApp
+    const activeApp = toolbox._shellApp;
+    Main.panel.statusArea['appIcons']._setActiveApp(activeApp);
+}
+
 function getInterestingWindows() {
     let windows = this._app.get_windows();
     let hasSpeedwagon = false;
@@ -1966,6 +1986,7 @@ function destroyWindow(shellwm, actor) {
 }
 
 const WM_HANDLERS = [];
+var FOCUS_WINDOW = 0;
 var GRAB_BEGIN = 0;
 var GRAB_END = 0;
 function _wmConnect(signal, fn) {
@@ -1997,6 +2018,8 @@ function enable() {
     if (Utils.is('endless')) {
         Utils.override(imports.ui.appIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
         Utils.override(imports.ui.appIconBar.ScrolledIconList, '_addButton', addButton);
+        // update the AppIconBar active app with app and toolbox linked
+        FOCUS_WINDOW = global.display.connect('notify::focus-window', focusWindowChanged);
     }
 
     WobblyFx.enable();
@@ -2029,6 +2052,8 @@ function disable() {
     if (Utils.is('endless')) {
         Utils.restore(imports.ui.appIconBar.AppIconButton);
         Utils.restore(imports.ui.appIconBar.ScrolledIconList);
+        global.display.disconnect(FOCUS_WINDOW);
+        FOCUS_WINDOW = 0;
     }
 
     WobblyFx.disable();

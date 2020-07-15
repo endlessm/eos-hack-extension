@@ -35,7 +35,7 @@ const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
 const MessageList = imports.ui.messageList;
 const NotificationDaemon = imports.ui.notificationDaemon;
-const SideComponent = imports.ui.sideComponent;
+
 const Util = imports.misc.util;
 
 const Soundable = Hack.imports.ui.soundable;
@@ -799,7 +799,7 @@ class ClubhouseNotification extends NotificationDaemon.GtkNotificationDaemonNoti
     _init(source, notification) {
         super._init(source, notification);
 
-	this.notificationId = notification.notificationId.unpack();
+        this.notificationId = notification.notificationId.unpack();
 
         // Avoid destroying the notification when clicking it
         this.setResident(true);
@@ -858,15 +858,14 @@ function _migrateHack1() {
 }
 
 var Component = GObject.registerClass({
-}, class ClubhouseComponent extends SideComponent.SideComponent {
+}, class ClubhouseComponent extends GObject.Object {
     _init(clubhouseIface, clubhouseId, clubhousePath) {
         this._clubhouseId = clubhouseId || 'com.hack_computer.Clubhouse';
         this._clubhouseIface = clubhouseIface || ClubhouseIface;
         this._clubhousePath = clubhousePath || CLUBHOUSE_DBUS_OBJ_PATH;
+        this._proxyInfo = Gio.DBusInterfaceInfo.new_for_xml(this._clubhouseIface);
 
         _migrateHack1();
-
-        super._init(this._clubhouseIface, this._clubhouseId, this._clubhousePath);
 
         Settings.connect('changed::hack-mode-enabled', () => {
             let activated = Settings.get_boolean('hack-mode-enabled');
@@ -890,8 +889,6 @@ var Component = GObject.registerClass({
         this._clubhouseAnimator = null;
         this._questBannerPosition = null;
 
-        this.proxyConstructFlags = Gio.DBusProxyFlags.NONE;
-
         this._overrideAddNotification();
     }
 
@@ -901,6 +898,24 @@ var Component = GObject.registerClass({
 
     getClubhouseApp() {
         return Utils.getClubhouseApp(this._clubhouseId);
+    }
+
+    _migrationQuest() {
+        // Check if the old HackComponents flatpak is installed, in that case,
+        // this is an old hack computer so we can launch the migration Quest.
+        // The new clubhouse will do the check and will only launch the quest once,
+        // so we can do the call every time.
+        const hackComponents = Gio.File.new_for_uri('file:///var/lib/flatpak/app/com.endlessm.HackComponents');
+        if (hackComponents.query_exists(null)) {
+            this.proxy.call('migrationQuest', null, Gio.DBusCallFlags.NONE, -1, null, (source, result) => {
+                try {
+                    this.proxy.call_finish(result);
+                    log('Hack 1 migration: migration quest started');
+                } catch (err) {
+                    logError(err, 'Hack 1 migration: migration quest could not be started');
+                }
+            });
+        }
     }
 
     _ensureProxy() {
@@ -914,9 +929,9 @@ var Component = GObject.registerClass({
                     g_connection: Gio.DBus.session,
                     g_interface_name: this._proxyInfo.name,
                     g_interface_info: this._proxyInfo,
-                    g_name: this._proxyName,
-                    g_object_path: this._proxyPath,
-                    g_flags: this.proxyConstructFlags,
+                    g_name: this._clubhouseId,
+                    g_object_path: this._clubhousePath,
+                    g_flags: Gio.DBusProxyFlags.NONE,
                 });
                 this.proxy.init(null);
                 return this.proxy;
@@ -935,7 +950,8 @@ var Component = GObject.registerClass({
             return;
         }
 
-        super.enable();
+        this._ensureProxy();
+        this._migrationQuest();
 
         if (this._clubhouseProxyHandler === 0) {
             this._clubhouseProxyHandler = this.proxy.connect('notify::g-name-owner', () => {
@@ -960,8 +976,6 @@ var Component = GObject.registerClass({
     }
 
     disable() {
-        super.disable();
-
         this._enabled = false;
         this._syncVisibility();
     }
@@ -1111,26 +1125,6 @@ var Component = GObject.registerClass({
             source.activateAction('quest-view-close', null);
 
         this._hasForegroundQuest = false;
-    }
-
-    _onProxyConstructed(object, res) {
-        super._onProxyConstructed(object, res);
-
-        // Check if the old HackComponents flatpak is installed, in that case,
-        // this is an old hack computer so we can launch the migration Quest.
-        // The new clubhouse will do the check and will only launch the quest once,
-        // so we can do the call every time.
-        const hackComponents = Gio.File.new_for_uri('file:///var/lib/flatpak/app/com.endlessm.HackComponents');
-        if (hackComponents.query_exists(null)) {
-            this.proxy.call('migrationQuest', null, Gio.DBusCallFlags.NONE, -1, null, (source, result) => {
-                try {
-                    this.proxy.call_finish(result);
-                    log('Hack 1 migration: migration quest started');
-                } catch (err) {
-                    logError(err, 'Hack 1 migration: migration quest could not be started');
-                }
-            });
-        }
     }
 
     _syncVisibility() {

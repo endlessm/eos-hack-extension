@@ -23,7 +23,7 @@
 
 /* exported enable, disable */
 
-const { Clutter, Flatpak, Gio, GLib, GObject, Json, Pango, St } = imports.gi;
+const { Clutter, Flatpak, Gio, GLib, GObject, Graphene, Json, Pango, St } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -550,11 +550,12 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
             this.remove_all_transitions();
 
             // clipping the actor to avoid appearing in the right monitor
-            const endClip = new Clutter.Rectangle({
-                x: 0,
-                y: 0,
-                width: this.width + CLUBHOUSE_BANNER_MARGIN,
-                height: this.height,
+            const endClip = new Graphene.Rect({
+                origin: new Graphene.Point({ x: 0, y: 0 }),
+                size: new Graphene.Size({
+                    width: this.width + CLUBHOUSE_BANNER_MARGIN,
+                    height: this.height,
+                }),
             });
             this.set_clip(0, 0, 0, this.height);
 
@@ -625,11 +626,12 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         const endX = monitor.x + monitor.width;
 
         // clipping the actor to avoid appearing in the right monitor
-        const endClip = new Clutter.Rectangle({
-            x: 0,
-            y: 0,
-            width: 0,
-            height: this.height,
+        const endClip = new Graphene.Rect({
+            origin: new Graphene.Point({ x: 0, y: 0 }),
+            size: new Graphene.Size({
+                width: 0,
+                height: this.height,
+            }),
         });
         this.set_clip(0, 0, this.width + CLUBHOUSE_BANNER_MARGIN, this.height);
 

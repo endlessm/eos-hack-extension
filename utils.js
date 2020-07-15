@@ -1,6 +1,7 @@
 /* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext */
 
 const { Gio, GLib, Shell } = imports.gi;
+const { config } = imports.misc;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
@@ -178,7 +179,11 @@ let _currentDesktopsMatches = {};
 //
 // This function is a copy of:
 // https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
-function is(name) {
+function is(name, maxVersion = '3.36') {
+    if (config.PACKAGE_VERSION > maxVersion) {
+        return false;
+    }
+
     if (_currentDesktopsMatches[name] !== undefined) {
         return _currentDesktopsMatches[name];
     }

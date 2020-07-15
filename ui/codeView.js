@@ -300,8 +300,6 @@ function _synchronizeViewSourceButtonToRectCorner(button, rect) {
 function _getViewSourceButtonParams(interactive) {
     return {
         style_class: 'view-source',
-        x_fill: true,
-        y_fill: true,
         reactive: interactive,
         can_focus: interactive,
         track_hover: interactive,
@@ -402,8 +400,8 @@ var WindowTrackingButton = GObject.registerClass({
         this._highlighted = value;
     }
 
-    vfunc_allocate(box, flags) {
-        super.vfunc_allocate(box, flags);
+    vfunc_allocate(box) {
+        super.vfunc_allocate(box);
 
         if (this._rect)
             _synchronizeViewSourceButtonToRectCorner(this, this._rect);
@@ -756,14 +754,7 @@ var CodingSession = GObject.registerClass({
         // Now, if we're not already on the desired state, we want to start
         // animating to it here.
         this._prepareAnimate(src, oldDst, newDst, direction);
-
-        // We wait until the first frame of the window has been drawn
-        // and damage updated in the compositor before we start rotating.
-        //
-        // This way we don't get ugly artifacts when rotating if
-        // a window is slow to draw.
-        _ensureAfterFirstFrame(newDst,
-            this._completeAnimate.bind(this, src, oldDst, newDst, direction, targetState));
+        this._completeAnimate(src, oldDst, newDst, direction, targetState);
     }
 
     admitAppWindowActor(actor) {
@@ -1311,6 +1302,7 @@ var CodingSession = GObject.registerClass({
 
         if (focusedActor === this.toolbox) {
             this.app.meta_window.raise();
+            this.toolbox.meta_window.raise();
             this._toolboxApp.activate_window(this.toolbox.meta_window, global.get_current_time());
         } else {
             // Ensure correct stacking order by activating the window that just got focus.
@@ -1508,11 +1500,6 @@ var CodeViewManager = GObject.registerClass({
         });
 
         this._stopped = false;
-        if (Utils.is('endless')) {
-            global.window_manager.connect('stop', () => {
-                this._stopped = true;
-            });
-        }
 
         // enable FtH for all windows!
         global.get_window_actors().forEach(actor => {
@@ -1907,7 +1894,8 @@ function getInterestingWindows() {
 }
 
 function isOverviewWindow(win) {
-    return !win.get_meta_window().skip_taskbar && !win.get_meta_window()._hackIsInactiveWindow;
+    const w = win.get_meta_window ? win.get_meta_window() : win;
+    return !w.skip_taskbar && !w._hackIsInactiveWindow;
 }
 
 function _windowCanWobble(win, op) {
@@ -2004,6 +1992,7 @@ function enable() {
             // Setting always the custom list of windows to hack toolbox and app linked
             this._cachedWindows = getWindowsForApp(this.app);
         },
+        configurable: true,
     });
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
@@ -2039,6 +2028,7 @@ function disable() {
         set: function(windowList) {
             this._cachedWindows = windowList;
         },
+        configurable: true,
     });
 
     Utils.restore(Workspace.Workspace);

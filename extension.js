@@ -31,9 +31,10 @@ function enable() {
     if (is('endless')) {
         // Hack desktop icon
         ui.appDisplay.enable();
-        // Hack clubhouse desktop notifications
-        ui.clubhouse.enable();
     }
+    // Hack clubhouse desktop notifications
+    ui.clubhouse.enable();
+
     // Flip to hack
     ui.codeView.enable();
 
@@ -44,8 +45,8 @@ function enable() {
 function disable() {
     if (is('endless')) {
         ui.appDisplay.disable();
-        ui.clubhouse.disable();
     }
+    ui.clubhouse.disable();
     ui.codeView.disable();
 
     Service.disable();

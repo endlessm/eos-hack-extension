@@ -16,72 +16,6 @@ const Settings = Hack.imports.utils.getSettings();
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const CORNER_RESIZING_DIVIDER = 6;
 
-function Prefs() {
-    this.FRICTION = {
-        key: 'wobbly-spring-friction',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
-    };
-
-    this.SPRING = {
-        key: 'wobbly-spring-k',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
-    };
-
-    this.MANUAL_RESTORE_FACTOR = {
-        key: 'wobbly-slowdown-factor',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
-    };
-
-    this.SKIP_FRAMES_BEFORE_SPRING_START = {
-        key: 'skip-frames-before-spring-start',
-        get: function () { return 1; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
-    };
-
-    this.MAXIMIZE_EFFECT_ENABLED = {
-        key: 'maximize-effect-enabled',
-        get: function () { return true; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
-    };
-
-    this.RESIZE_EFFECT_ENABLED = {
-        key: 'resize-effect-enabled',
-        get: function () { return true; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
-    };
-
-    this.X_TILES = {
-        key: 'x-tiles',
-        get: function () { return 6; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
-    };
-
-    this.Y_TILES = {
-        key: 'y-tiles',
-        get: function () { return 4; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
-    };
-};
-
 const EFFECT_NAME = 'wobbly-effect';
 const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
 
@@ -187,24 +121,30 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.yDeltaFreezed = 0;
             this.divider = 1;
 
-            //Init stettings
-            let prefs = new Prefs();
-            this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
-            this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
-            this.X_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
-            this.Y_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
-            this.Y_STRETCH_MULTIPLIER = (100 - prefs.FRICTION.get()) * 2 / 100;
+            // Init settings
+            const friction = Settings.get_double('wobbly-spring-friction');
+            const spring = Settings.get_double('wobbly-spring-k');
+            const slowdown = Settings.get_double('wobbly-slowdown-factor');
+
+            this.MAXIMIZE_EFFECT_ENABLED = true;
+            this.RESIZE_EFFECT_ENABLED = true;
+
+            this.X_MULTIPLIER = (100 - friction) * 2 / 100;
+            this.Y_MULTIPLIER = (100 - friction) * 2 / 100;
+            this.Y_STRETCH_MULTIPLIER = (100 - friction) * 2 / 100;
+
             this.END_EFFECT_DIVIDER = 4;
-            this.END_RESTORE_X_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
-            this.END_RESTORE_Y_FACTOR = 0.3 * (100 - prefs.SPRING.get()) / 100 + 1;
-            this.END_FREEZE_X_FACTOR = prefs.SPRING.get() / 100;
-            this.END_FREEZE_Y_FACTOR = prefs.SPRING.get() / 100;
-            this.DELTA_FREEZED = 80 * prefs.SPRING.get() / 100;
+            this.END_RESTORE_X_FACTOR = 0.3 * (100 - spring) / 100 + 1;
+            this.END_RESTORE_Y_FACTOR = 0.3 * (100 - spring) / 100 + 1;
+            this.END_FREEZE_X_FACTOR = spring / 100;
+            this.END_FREEZE_Y_FACTOR = spring / 100;
+            this.DELTA_FREEZED = 80 * spring / 100;
+
             this.STOP_COUNTER = 20;
-            this.STOP_COUNTER_EXTRA = prefs.SKIP_FRAMES_BEFORE_SPRING_START.get();
-            this.RESTORE_FACTOR = 1 + prefs.MANUAL_RESTORE_FACTOR.get() / 10;
-            this.X_TILES = prefs.X_TILES.get();
-            this.Y_TILES = prefs.Y_TILES.get();
+            this.STOP_COUNTER_EXTRA = 1;
+            this.RESTORE_FACTOR = 1 + slowdown / 10;
+            this.X_TILES = 6;
+            this.Y_TILES = 4;
         }
 
         vfunc_set_actor(actor) {

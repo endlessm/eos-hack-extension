@@ -645,6 +645,7 @@ var CodingSession = GObject.registerClass({
         this._backParent = backActor.get_parent();
         this._backParent.remove_child(backActor);
         frontActor.insert_child_at_index(backActor, 0);
+        this._setEffectsEnabled(backActor, this.flipped);
 
         // Constraint to avoid inside actor movement
         const path = new Clutter.Path();
@@ -1208,6 +1209,11 @@ var CodingSession = GObject.registerClass({
             this._setEffectsEnabled(otherActor, !Main.overview.visible);
 
         this._syncButtonVisibility();
+
+        if (Main.overview.visible)
+            this._attachBackendWindow();
+        else
+            this._detachBackendWindow();
     }
 
     _syncButtonVisibility() {

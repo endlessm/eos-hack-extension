@@ -1816,13 +1816,6 @@ function switcherFinish(timestamp) {
     SwitcherPopup.SwitcherPopup.prototype._finish.bind(this)(timestamp);
 }
 
-function is_speedwagon_window(metaWindow) {
-    if (!Utils.desktopIs('endless'))
-        return false;
-
-    return Shell.WindowTracker.is_speedwagon_window(metaWindow);
-}
-
 function addButton(app) {
     const [win] = app.get_windows();
     const proxy = _getHackToolboxProxy(win);
@@ -1854,9 +1847,7 @@ function focusWindowChanged() {
 
 function getInterestingWindows() {
     let windows = this._app.get_windows();
-    let hasSpeedwagon = false;
     windows = windows.filter(metaWindow => {
-        hasSpeedwagon = hasSpeedwagon || is_speedwagon_window(metaWindow);
         return !metaWindow.is_skip_taskbar() && !metaWindow._hackIsInactiveWindow;
     });
 
@@ -1878,7 +1869,7 @@ function getInterestingWindows() {
         });
     }
 
-    return [windows, hasSpeedwagon];
+    return [windows, false];
 }
 
 function isOverviewWindow(win) {
@@ -1932,25 +1923,10 @@ function _windowUngrabbed(display, op, win) {
 
 function mapWindow(shellwm, actor) {
     actor._windowType = actor.meta_window.get_window_type();
-    const metaWindow = actor.meta_window;
-    const isSplashWindow = is_speedwagon_window(metaWindow);
-
-    if (!isSplashWindow) {
-        // If we have an active splash window for the app, don't animate it.
-        const tracker = Shell.WindowTracker.get_default();
-        const app = tracker.get_window_app(metaWindow);
-        const hasSplashWindow = app && app.get_windows().some(w => is_speedwagon_window(w));
-        if (hasSplashWindow) {
-            if (!this._codeViewManager.handleMapWindow(actor))
-                shellwm.completed_map(actor);
-            return;
-        }
-    }
-
     if (Utils.desktopIs('endless') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
         return;
 
-    if (actor._windowType === Meta.WindowType.NORMAL && !isSplashWindow)
+    if (actor._windowType === Meta.WindowType.NORMAL)
         this._codeViewManager.handleMapWindow(actor);
 }
 

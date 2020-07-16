@@ -159,8 +159,9 @@ var AbstractCommonEffect = GObject.registerClass({},
         }
 
         start_timer(timerFunction) {
+            const actor = this.get_actor();
             this.stop_timer();
-            this.timerId = new Clutter.Timeline({duration: CLUTTER_TIMELINE_DURATION});
+            this.timerId = new Clutter.Timeline({actor, duration: CLUTTER_TIMELINE_DURATION});
             this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
             this.timerId.start();
         }
@@ -178,10 +179,9 @@ var AbstractCommonEffect = GObject.registerClass({},
 
         destroy() {
             this.stop_timer();
-
             this.parentActor = null;
+            const actor = this.get_actor();
 
-            let actor = this.get_actor();
             if (actor) {
                 if (this.paintEvent) {
                     actor.disconnect(this.paintEvent);

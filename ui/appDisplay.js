@@ -1,6 +1,7 @@
 /* exported enable, disable */
+/* global global */
 
-const { Clutter, Graphene, Gio, GLib, GObject, Pango, Shell, St } = imports.gi;
+const {Clutter, Graphene, Gio, GLib, GObject, Pango, Shell, St} = imports.gi;
 
 const AppDisplay = imports.ui.appDisplay;
 const IconGridLayout = imports.ui.iconGridLayout;
@@ -88,11 +89,11 @@ class HackAppIcon extends AppDisplay.AppIcon {
             duration: 100,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         };
-        this._easeIcon({ ...params, scale_x: 1.1, scale_y: 1.1 })
-            .then(this._easeIcon.bind(this, { ...params, scale_x: 0.9, scale_y: 0.9 }))
-            .then(this._easeIcon.bind(this, { ...params, scale_x: 1.1, scale_y: 1.1 }))
-            .then(this._easeIcon.bind(this, { ...params, scale_x: 0.9, scale_y: 0.9 }))
-            .then(this._easeIcon.bind(this, { ...params, scale_x: 1.0, scale_y: 1.0 }))
+        this._easeIcon({...params, scale_x: 1.1, scale_y: 1.1})
+            .then(this._easeIcon.bind(this, {...params, scale_x: 0.9, scale_y: 0.9}))
+            .then(this._easeIcon.bind(this, {...params, scale_x: 1.1, scale_y: 1.1}))
+            .then(this._easeIcon.bind(this, {...params, scale_x: 0.9, scale_y: 0.9}))
+            .then(this._easeIcon.bind(this, {...params, scale_x: 1.0, scale_y: 1.0}))
             .then(() => {
                 this._pulseWaitId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
                     this._pulseWaitId = 0;
@@ -105,7 +106,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
 
     _easeIcon(easeParams) {
         return new Promise(resolve => {
-            const params = { ...easeParams, onComplete: () => resolve(this) };
+            const params = {...easeParams, onComplete: () => resolve(this)};
             this.icon.icon.ease(params);
         });
     }
@@ -116,12 +117,12 @@ class HackAppIcon extends AppDisplay.AppIcon {
             iconUri = `file://${Hack.path}/data/icons/hack-button-on.svg`;
 
         const iconFile = Gio.File.new_for_uri(iconUri);
-        const gicon = new Gio.FileIcon({ file: iconFile });
+        const gicon = new Gio.FileIcon({file: iconFile});
 
         return new St.Icon({
-            gicon: gicon,
+            gicon,
             icon_size: iconSize,
-            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
         });
     }
 
@@ -129,20 +130,22 @@ class HackAppIcon extends AppDisplay.AppIcon {
         return this._createIcon(this._iconSize);
     }
 
-    activate(button) {
+    activate() {
         Settings.set_boolean('hack-icon-pulse', false);
 
         // We should activate the clubhouse using the DBus API because some
         // toolbox windows shares the same app so activating the app could not
         // show the clubhouse window sometimes.
         const params = GLib.Variant.new('(a{sv})', [{}]);
-        Gio.DBus.session.call('com.hack_computer.Clubhouse',
-                              '/com/hack_computer/Clubhouse',
-                              'org.gtk.Application',
-                              'Activate', params, null,
-                              Gio.DBusCallFlags.NONE,
-                              -1, null,
-                              (conn, res) => conn.call_finish(res));
+        Gio.DBus.session.call(
+            'com.hack_computer.Clubhouse',
+            '/com/hack_computer/Clubhouse',
+            'org.gtk.Application',
+            'Activate', params, null,
+            Gio.DBusCallFlags.NONE,
+            -1, null,
+            (conn, res) => conn.call_finish(res)
+        );
     }
 
     _canAccept() {
@@ -204,7 +207,7 @@ class HackAppIcon extends AppDisplay.AppIcon {
     }
 
     _updateRunningStyle() {
-        const running = this.app.state != Shell.AppState.STOPPED;
+        const running = this.app.state !== Shell.AppState.STOPPED;
         global.hack = this.app;
 
         // Only show the dot if the clubhouse window is visible
@@ -225,17 +228,17 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
         this.style_class = 'hack-popup-menu-item';
 
         /* Translators: The 'Endless Hack' is not translatable, it's the brand name */
-        const title = _("Endless Hack: Unlock infinite possibilities through coding");
+        const title = _('Endless Hack: Unlock infinite possibilities through coding');
         /* Translators: The 'Hack' is not translatable, it's the brand name */
-        const description = _("Hack is a new learning platform from Endless, focused on teaching the foundations of programming and creative problem-solving to kids, ages 10 and up. With 5 different pathways, Hack has a variety of activities that teach a wide range of skills and concepts - check it out!");
+        const description = _('Hack is a new learning platform from Endless, focused on teaching the foundations of programming and creative problem-solving to kids, ages 10 and up. With 5 different pathways, Hack has a variety of activities that teach a wide range of skills and concepts - check it out!');
         const image = `file://${Hack.path}/data/icons/hack-tooltip.png`;
         const iconFile = Gio.File.new_for_uri(image);
-        const gicon = new Gio.FileIcon({ file: iconFile });
+        const gicon = new Gio.FileIcon({file: iconFile});
 
         this.icon = new St.Icon({
-            gicon: gicon,
+            gicon,
             icon_size: 180,
-            pivot_point: new Graphene.Point({ x: 0.5, y: 0.5 }),
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
             style_class: 'hack-tooltip-icon',
             x_align: Clutter.ActorAlign.CENTER,
         });
@@ -278,14 +281,14 @@ const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 var HackIcons = new Utils.ObjectsMap();
 
 function enable() {
-    Utils.override(AppDisplay.AppDisplay, '_loadApps', function() {
+    Utils.override(AppDisplay.AppDisplay, '_loadApps', function () {
         const newApps = Utils.original(AppDisplay.AppDisplay, '_loadApps').bind(this)();
 
         if (_shouldShowHackLauncher()) {
             let icon = HackIcons.get(this);
             if (!icon) {
                 icon = new HackAppIcon();
-                icon.connect('destroy', (i) => {
+                icon.connect('destroy', i => {
                     HackIcons.delValue(i);
                 });
                 HackIcons.set(this, icon);
@@ -296,7 +299,7 @@ function enable() {
 
         return newApps;
     });
-    Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function(id, interactive) {
+    Utils.override(IconGridLayout.IconGridLayout, 'removeIcon', function (id, interactive) {
         if (id === CLUBHOUSE_ID) {
             HackIcons.forEach((k, v) => v.remove());
 
@@ -308,17 +311,17 @@ function enable() {
 
             // undo action
             if (interactive) {
-                let options = { forFeedback: true,
-                                destroyCallback: () => this._onMessageDestroy(info),
-                                undoCallback: () => {
-                                    this._removeUndone = true;
-                                    Settings.set_boolean('show-hack-launcher', true);
-                                    this.emit('layout-changed');
-                                },
-                              };
+                let options = {
+                    forFeedback: true,
+                    destroyCallback: () => this._onMessageDestroy(info),
+                    undoCallback: () => {
+                        this._removeUndone = true;
+                        Settings.set_boolean('show-hack-launcher', true);
+                        this.emit('layout-changed');
+                    },
+                };
 
-                Main.overview.setMessage(_("%s has been removed").format('Hack'),
-                                         options);
+                Main.overview.setMessage(_('%s has been removed').format('Hack'), options);
             } else {
                 this._onMessageDestroy(info);
             }
@@ -330,7 +333,7 @@ function enable() {
     });
 
     // Disable movements
-    Utils.override(AppDisplay.BaseAppView, '_canAccept', function(source) {
+    Utils.override(AppDisplay.BaseAppView, '_canAccept', function (source) {
         // Disable movement of the HackAppIcon
         if (source instanceof HackAppIcon)
             return false;
@@ -338,7 +341,7 @@ function enable() {
         return Utils.original(AppDisplay.BaseAppView, '_canAccept').bind(this)(source);
     });
 
-    Utils.override(AppDisplay.FolderIcon, '_canAccept', function(source) {
+    Utils.override(AppDisplay.FolderIcon, '_canAccept', function (source) {
         // Disable movement of the HackAppIcon
         if (source instanceof HackAppIcon)
             return false;
@@ -346,7 +349,7 @@ function enable() {
         return Utils.original(AppDisplay.FolderIcon, '_canAccept').bind(this)(source);
     });
 
-    Utils.override(AppDisplay.AppIcon, '_canAccept', function(source) {
+    Utils.override(AppDisplay.AppIcon, '_canAccept', function (source) {
         // Disable movement of the HackAppIcon
         if (source instanceof HackAppIcon)
             return false;

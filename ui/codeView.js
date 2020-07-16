@@ -1,7 +1,8 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 /* exported enable, disable */
+/* global global */
 
-const { Clutter, Graphene, Gio, GLib, GObject, Gtk, Meta, Shell, St } = imports.gi;
+const {Clutter, Graphene, Gio, GLib, GObject, Gtk, Meta, Shell, St} = imports.gi;
 const SwitcherPopup = imports.ui.switcherPopup;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -9,7 +10,7 @@ const Hack = ExtensionUtils.getCurrentExtension();
 const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 
-const { Animation } = imports.ui.animation;
+const {Animation} = imports.ui.animation;
 const Main = imports.ui.main;
 const Params = imports.misc.params;
 const Soundable = Hack.imports.ui.soundable;
@@ -32,8 +33,8 @@ const FLIP_BUTTON_WIDTH = 66;
 const FLIP_BUTTON_HEIGHT = 124;
 const FLIP_BUTTON_PULSE_SPEED = 100;
 
-const OLD_HACK_TOOLBOX_ID = "com.endlessm.HackToolbox.Toolbox";
-const HACK_TOOLBOX_ID = "com.hack_computer.HackToolbox.Toolbox";
+const OLD_HACK_TOOLBOX_ID = 'com.endlessm.HackToolbox.Toolbox';
+const HACK_TOOLBOX_ID = 'com.hack_computer.HackToolbox.Toolbox';
 
 const _HACK_SHADER_MAP = {
     none: null,
@@ -50,7 +51,7 @@ const _HACK_SHADER_MAP = {
 };
 const _HACK_DEFAULT_SHADER = 'desaturate';
 // Green color for the flip to hack app effect
-const _HACK_BACK_COLOR = new Clutter.Color({ red: 22, green: 176, blue: 136 });
+const _HACK_BACK_COLOR = new Clutter.Color({red: 22, green: 176, blue: 136});
 
 const HackableIface = `
 <node>
@@ -100,50 +101,47 @@ function _getHackToolboxProxy(win) {
     let hackToolboxId = HACK_TOOLBOX_ID;
 
     // This will work only on EndlessOS
-    if (Shell.WindowTracker.get_hack_toolbox_proxy) {
+    if (Shell.WindowTracker.get_hack_toolbox_proxy)
         return Shell.WindowTracker.get_hack_toolbox_proxy(win);
-    }
 
     /* Check if there is a set application id and object path
      * on this window. If not, then it can't be a toolbox. */
     const windowAppId = win.get_gtk_application_id();
     const windowObjectPath = win.get_gtk_window_object_path();
 
-    if (!windowAppId || !windowObjectPath) {
+    if (!windowAppId || !windowObjectPath)
         return null;
-    }
 
     /* Not a bus name, no way that this could be a toolbox */
-    if (!Gio.dbus_is_name(windowAppId)) {
+    if (!Gio.dbus_is_name(windowAppId))
         return null;
-    }
 
     /* Check if the app starts with com.endlessm for old hack apps and in that
      * case we will use the old toolbox, in other case we'll use the
      * com.hack_computer.HackToolbox */
-    if (windowAppId.startsWith('com.endlessm')) {
+    if (windowAppId.startsWith('com.endlessm'))
         hackToolboxId = OLD_HACK_TOOLBOX_ID;
-    }
 
     let proxy = null;
     try {
-        proxy = Gio.DBusProxy.new_sync(Gio.DBus.session,
-                                       Gio.DBusProxyFlags.DO_NOT_AUTO_START |
-                                       Gio.DBusProxyFlags.DO_NOT_CONNECT_SIGNALS,
-                                       null,
-                                       windowAppId,
-                                       windowObjectPath,
-                                       hackToolboxId,
-                                       null);
+        proxy = Gio.DBusProxy.new_sync(
+            Gio.DBus.session,
+            Gio.DBusProxyFlags.DO_NOT_AUTO_START |
+            Gio.DBusProxyFlags.DO_NOT_CONNECT_SIGNALS,
+            null,
+            windowAppId,
+            windowObjectPath,
+            hackToolboxId,
+            null,
+        );
     } catch (e) {
         logError(e, `Error while constructing the DBus proxy for ${windowAppId}`);
         return null;
     }
 
     const targetPropertyVariant = proxy.get_cached_property('Target');
-    if (!targetPropertyVariant) {
+    if (!targetPropertyVariant)
         return null;
-    }
 
     const [targetAppId, targetWindowId] = targetPropertyVariant.deep_unpack();
 
@@ -162,7 +160,7 @@ function _getToolboxTarget(win) {
     return [targetAppId, targetWindowId];
 }
 
-const _ensureHackDataFile = (function() {
+const _ensureHackDataFile = (function () {
     let keyfile = new GLib.KeyFile();
     let initialized = false;
     const monitors = [];
@@ -180,7 +178,7 @@ const _ensureHackDataFile = (function() {
         }
     }
 
-    return function() {
+    return function () {
         if (initialized)
             return keyfile;
 
@@ -216,7 +214,7 @@ const _ensureHackDataFile = (function() {
         initialized = true;
         return keyfile;
     };
-}());
+})();
 
 function _appIsBlockedFromHacking(desktopId) {
     const keyfile = _ensureHackDataFile();
@@ -651,7 +649,7 @@ var CodingSession = GObject.registerClass({
         // Constraint to avoid inside actor movement
         const path = new Clutter.Path();
         path.add_move_to(0, 0);
-        this._backConstraint = new Clutter.PathConstraint({ path: path, offset: 0 });
+        this._backConstraint = new Clutter.PathConstraint({path, offset: 0});
         backActor.add_constraint(this._backConstraint);
     }
 
@@ -834,21 +832,20 @@ var CodingSession = GObject.registerClass({
             if (Shell.CodeViewEffect) {
                 const shaderDef = _HACK_SHADER_MAP[shaderEffect];
                 if (shaderDef) {
-                    effect = new shaderDef.constructor({ enabled });
+                    effect = new shaderDef.constructor({enabled});
                     effect.set_gradient_stops(shaderDef.colors, shaderDef.points);
                 }
             } else {
-                effect = new Clutter.ColorizeEffect({ tint: _HACK_BACK_COLOR, enabled });
+                effect = new Clutter.ColorizeEffect({tint: _HACK_BACK_COLOR, enabled});
             }
 
-            if (effect) {
+            if (effect)
                 actor.add_effect_with_name('codeview-effect', effect);
-            }
         }
     }
 
     _initToolboxAppActionGroup() {
-        const { toolboxId } = this;
+        const {toolboxId} = this;
         const toolboxPath = `/${toolboxId.replace(/\./g, '/')}`;
 
         this._toolboxAppActionGroup =
@@ -877,7 +874,7 @@ var CodingSession = GObject.registerClass({
             this.toolbox.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
         // FIXME: Sync toolbox window
-        if (Utils.is('endless')) {
+        if (Utils.desktopIs('endless')) {
             this._constrainGeometryIdToolbox =
                 this.toolbox.meta_window.connect('geometry-allocate',
                     this._constrainGeometry.bind(this));
@@ -924,7 +921,7 @@ var CodingSession = GObject.registerClass({
             this.app.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
         // FIXME: Sync app window
-        if (Utils.is('endless')) {
+        if (Utils.desktopIs('endless')) {
             this._constrainGeometryIdApp =
                 this.app.meta_window.connect('geometry-allocate',
                     this._constrainGeometry.bind(this));
@@ -1092,9 +1089,9 @@ var CodingSession = GObject.registerClass({
         // We need to compare these dimensions in frame coordinates, since
         // one of the two windows may be client-side decorated.
         const minAppRect = this.app.meta_window.client_rect_to_frame_rect(
-            new Meta.Rectangle({ x: 0, y: 0, width: minAppWidth, height: minAppHeight }));
+            new Meta.Rectangle({x: 0, y: 0, width: minAppWidth, height: minAppHeight}));
         const minToolboxRect = this.toolbox.meta_window.client_rect_to_frame_rect(
-            new Meta.Rectangle({ x: 0, y: 0, width: minToolboxWidth, height: minToolboxHeight }));
+            new Meta.Rectangle({x: 0, y: 0, width: minToolboxWidth, height: minToolboxHeight}));
 
         const minWidth = Math.max(minAppRect.width, minToolboxRect.width);
         const minHeight = Math.max(minAppRect.height, minToolboxRect.height);
@@ -1221,7 +1218,7 @@ var CodingSession = GObject.registerClass({
         // Don't show if the screen is locked
         const locked = Main.sessionMode.isLocked;
 
-        const { primaryMonitor } = Main.layoutManager;
+        const {primaryMonitor} = Main.layoutManager;
         const inFullscreen = primaryMonitor && primaryMonitor.inFullscreen;
 
         if (!Settings.get_boolean('hack-mode-enabled')) {
@@ -1344,8 +1341,8 @@ var CodingSession = GObject.registerClass({
         // we have to set those after unmaximize/maximized otherwise they are lost
         newDst.rotation_angle_y = direction === Gtk.DirectionType.RIGHT ? -180 : 180;
         src.rotation_angle_y = 0;
-        newDst.pivot_point = new Graphene.Point({ x: 0.5, y: 0.5 });
-        src.pivot_point = new Graphene.Point({ x: 0.5, y: 0.5 });
+        newDst.pivot_point = new Graphene.Point({x: 0.5, y: 0.5});
+        src.pivot_point = new Graphene.Point({x: 0.5, y: 0.5});
 
         // Pre-create the effect if it hasn't been already
         this._setEffectsEnabled(src, false);
@@ -1466,8 +1463,8 @@ const SessionLookupFlags = {
 
 var CodeViewManager = GObject.registerClass({
     Signals: {
-        'session-added': { param_types: [GObject.TYPE_OBJECT] },
-        'session-removed': { param_types: [GObject.TYPE_OBJECT] },
+        'session-added': {param_types: [GObject.TYPE_OBJECT]},
+        'session-removed': {param_types: [GObject.TYPE_OBJECT]},
     },
 }, class CodeViewManager extends GObject.Object {
     _init(params) {
@@ -1523,7 +1520,7 @@ var CodeViewManager = GObject.registerClass({
     }
 
     _addSession(actor) {
-        const session = new CodingSession({ app: actor });
+        const session = new CodingSession({app: actor});
 
         // When the app is minimized the WM doesn't emit the destroy signal if
         // the app is closed, for this reason we need to listen to the 'destroy'
@@ -1764,7 +1761,7 @@ function getWindows(workspace) {
 
 function getWindowsForApp(app) {
     const windowTracker = Shell.WindowTracker.get_default();
-    const settings = new Gio.Settings({ schema_id: 'org.gnome.shell.app-switcher' });
+    const settings = new Gio.Settings({schema_id: 'org.gnome.shell.app-switcher'});
 
     let workspace = null;
     if (settings.get_boolean('current-workspace-only')) {
@@ -1779,19 +1776,16 @@ function getWindowsForApp(app) {
     const toolboxSession = sessions.find(s => s._toolboxApp === app);
 
     const wins = allWindows.filter(w => {
-        if (toolboxSession && toolboxSession.toolbox.meta_window === w) {
+        if (toolboxSession && toolboxSession.toolbox.meta_window === w)
             return false;
-        }
 
-        if (appSession && appSession.toolbox && appSession.toolbox.meta_window === w) {
+        if (appSession && appSession.toolbox && appSession.toolbox.meta_window === w)
             return true;
-        }
 
-        if (appSession && appSession.flipped && appSession.app.meta_window === w) {
+        if (appSession && appSession.flipped && appSession.app.meta_window === w)
             return false;
-        }
 
-        return windowTracker.get_window_app(w) == app;
+        return windowTracker.get_window_app(w) === app;
     });
     return wins;
 }
@@ -1800,13 +1794,11 @@ function activateWindow(window, time, workspaceNum) {
     let win = window;
     const sessions = Main.wm._codeViewManager.sessions;
     const session = sessions.find(s => s.app && s.app.meta_window === win);
-    const toolboxSession = sessions.find(s => s.toolbox && s.toolbox.meta_window === win);
     const activate = Utils.original(Main, 'activateWindow').bind(this);
 
     // If the app is flipped we should activate the toolbox window
-    if (session && session.flipped) {
+    if (session && session.flipped)
         win = session.toolbox.meta_window;
-    }
 
     activate(win, time, workspaceNum);
 }
@@ -1825,20 +1817,18 @@ function switcherFinish(timestamp) {
 }
 
 function is_speedwagon_window(metaWindow) {
-    if (!Utils.is('endless')) {
+    if (!Utils.desktopIs('endless'))
         return false;
-    }
 
     return Shell.WindowTracker.is_speedwagon_window(metaWindow);
 }
 
 function addButton(app) {
-    const [win, ] = app.get_windows();
+    const [win] = app.get_windows();
     const proxy = _getHackToolboxProxy(win);
     // This is a toolbox! we don't want to show toolboxes in the icon bar
-    if (proxy) {
+    if (proxy)
         return;
-    }
 
     Utils.original(imports.ui.appIconBar.ScrolledIconList, '_addButton').bind(this)(app);
 }
@@ -1852,9 +1842,8 @@ function focusWindowChanged() {
         // it could be the clubhouse
         const windowTracker = Shell.WindowTracker.get_default();
         const focusApp = windowTracker.focus_app;
-        if (focusApp.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse') {
+        if (focusApp.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse')
             Main.panel.statusArea['appIcons']._setActiveApp(focusApp);
-        }
         return;
     }
 
@@ -1875,9 +1864,8 @@ function getInterestingWindows() {
     const sessions = Main.wm._codeViewManager.sessions;
     const appSession = sessions.find(s => s._shellApp === this._app);
     if (appSession && appSession.toolbox && !appSession.toolbox._hackIsInactiveWindow) {
-        if (!windows.includes(appSession.toolbox.meta_window)) {
+        if (!windows.includes(appSession.toolbox.meta_window))
             windows.push(appSession.toolbox.meta_window);
-        }
     }
 
     windows = windows.filter(metaWindow => !metaWindow._hackIsInactiveWindow);
@@ -1919,7 +1907,7 @@ function _windowGrabbed(display, screen, win, op) {
     // on the window.
     const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
     if (attachedEffect)
-        attachedEffect.activate('move', { grabbed: true });
+        attachedEffect.activate('move', {grabbed: true});
 
     this._codeViewManager.handleWindowGrab(actor, true);
 }
@@ -1937,7 +1925,7 @@ function _windowUngrabbed(display, op, win) {
     // This is an event that may cause an animation on the window
     const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
     if (attachedEffect)
-        attachedEffect.activate('move', { grabbed: false });
+        attachedEffect.activate('move', {grabbed: false});
 
     this._codeViewManager.handleWindowGrab(actor, false);
 }
@@ -1959,7 +1947,7 @@ function mapWindow(shellwm, actor) {
         }
     }
 
-    if (Utils.is('endless') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
+    if (Utils.desktopIs('endless') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
         return;
 
     if (actor._windowType === Meta.WindowType.NORMAL && !isSplashWindow)
@@ -1984,11 +1972,11 @@ function enable() {
     // override alt-tab switchers
     Utils.override(AltTab, 'getWindows', getWindows);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
-        get: function() {
+        get() {
             const cached = this._cachedWindows || [];
             return cached.filter(win => !win._hackIsInactiveWindow);
         },
-        set: function() {
+        set() {
             // Setting always the custom list of windows to hack toolbox and app linked
             this._cachedWindows = getWindowsForApp(this.app);
         },
@@ -2001,7 +1989,7 @@ function enable() {
 
     Main.wm._codeViewManager = new CodeViewManager();
 
-    if (Utils.is('endless')) {
+    if (Utils.desktopIs('endless')) {
         Utils.override(imports.ui.appIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
         Utils.override(imports.ui.appIconBar.ScrolledIconList, '_addButton', addButton);
         // update the AppIconBar active app with app and toolbox linked
@@ -2022,10 +2010,10 @@ function disable() {
     Utils.restore(Main);
     Utils.restore(AltTab.AppSwitcherPopup);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
-        get: function() {
+        get() {
             return this._cachedWindows;
         },
-        set: function(windowList) {
+        set(windowList) {
             this._cachedWindows = windowList;
         },
         configurable: true,
@@ -2036,7 +2024,7 @@ function disable() {
     Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
 
-    if (Utils.is('endless')) {
+    if (Utils.desktopIs('endless')) {
         Utils.restore(imports.ui.appIconBar.AppIconButton);
         Utils.restore(imports.ui.appIconBar.ScrolledIconList);
         global.display.disconnect(FOCUS_WINDOW);

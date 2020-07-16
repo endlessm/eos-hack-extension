@@ -1,6 +1,6 @@
 /* exported getDefault, SoundItem */
 
-const { Gio, Shell } = imports.gi;
+const {Gio, Shell} = imports.gi;
 
 function _soundServerIface(id) {
     return `
@@ -91,14 +91,14 @@ class SoundServer {
     }
 }
 
-var getDefault = (function() {
+var getDefault = (function () {
     let defaultSoundServer;
-    return function() {
+    return function () {
         if (!defaultSoundServer)
             defaultSoundServer = new SoundServer();
         return defaultSoundServer;
     };
-}());
+})();
 
 var SoundItem = class {
     constructor(name) {

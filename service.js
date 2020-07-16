@@ -1,6 +1,7 @@
 /* exported HackableApp, enable, disable */
+/* global global */
 
-const { Gio, GLib, Shell } = imports.gi;
+const {Gio, GLib, Shell} = imports.gi;
 const ShellDBus = imports.ui.shellDBus;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -13,6 +14,7 @@ const Main = imports.ui.main;
 const IFACE = Utils.loadInterfaceXML('com.hack_computer.hack');
 const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
+/* eslint class-methods-use-this: 'off' */
 var Service = class {
     constructor() {
         this._settingsHandlers = [];
@@ -65,7 +67,7 @@ var Service = class {
     }
 
     stop() {
-        this._settingsHandlers.forEach((handler) => Settings.disconnect(handler));
+        this._settingsHandlers.forEach(handler => Settings.disconnect(handler));
         Shell.WindowTracker.get_default().disconnect(this._windowTrackId);
 
         try {
@@ -74,7 +76,7 @@ var Service = class {
             logError(e, 'Cannot unexport Hack service');
         }
 
-        if (this._nameId != 0) {
+        if (this._nameId !== 0) {
             Gio.bus_unown_name(this._nameId);
             this._nameId = 0;
         }
@@ -260,7 +262,7 @@ var HackableAppsManager = class {
             return;
         }
 
-        if (this._nameId != 0) {
+        if (this._nameId !== 0) {
             Gio.bus_unown_name(this._nameId);
             this._nameId = 0;
         }
@@ -300,11 +302,10 @@ function enable() {
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 
-    if (!Utils.is('endless')) {
+    if (!Utils.desktopIs('endless'))
         return;
-    }
 
-    Utils.override(ShellDBus.AppStoreService, 'AddApplication', function(id) {
+    Utils.override(ShellDBus.AppStoreService, 'AddApplication', function (id) {
         ShellDBus._reportAppAddedMetric(id);
 
         if (id === CLUBHOUSE_ID) {
@@ -316,7 +317,7 @@ function enable() {
         Utils.original(ShellDBus.AppStoreService, 'AddApplication').bind(this)(id);
     });
 
-    Utils.override(ShellDBus.AppStoreService, 'AddAppIfNotVisible', function(id) {
+    Utils.override(ShellDBus.AppStoreService, 'AddAppIfNotVisible', function (id) {
         if (id === CLUBHOUSE_ID) {
             Settings.set_boolean('show-hack-launcher', true);
             this._iconGridLayout.emit('layout-changed');
@@ -327,7 +328,7 @@ function enable() {
         Utils.original(ShellDBus.AppStoreService, 'AddAppIfNotVisible').bind(this)(id);
     });
 
-    Utils.override(ShellDBus.AppStoreService, 'RemoveApplication', function(id) {
+    Utils.override(ShellDBus.AppStoreService, 'RemoveApplication', function (id) {
         if (id === CLUBHOUSE_ID) {
             Settings.set_boolean('show-hack-launcher', false);
             this._iconGridLayout.emit('layout-changed');
@@ -339,9 +340,8 @@ function enable() {
 }
 
 function disable() {
-    if (Utils.is('endless')) {
+    if (Utils.desktopIs('endless'))
         Utils.restore(ShellDBus.AppStoreService);
-    }
 
     if (SHELL_DBUS_SERVICE) {
         SHELL_DBUS_SERVICE.stop();

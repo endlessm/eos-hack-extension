@@ -640,6 +640,9 @@ var CodingSession = GObject.registerClass({
     }
 
     _attachBackendWindow() {
+        if (this._backParent)
+            return;
+
         const frontActor = this._actorForCurrentState();
         const backActor = this._getOtherActor(frontActor);
 
@@ -659,10 +662,13 @@ var CodingSession = GObject.registerClass({
     }
 
     _detachBackendWindow() {
+        if (!this._backParent)
+            return;
+
         const frontActor = this._actorForCurrentState();
         const backActor = this._getOtherActor(frontActor);
 
-        if (!this._backParent || !backActor)
+        if (!backActor)
             return;
 
         if (this._backConstraint) {
@@ -1915,6 +1921,41 @@ function getInterestingWindows() {
     return [windows, hasSpeedwagon];
 }
 
+function createWindowClone(window, size) {
+    const [width, height] = window.get_size();
+    const scale = Math.min(1.0, size / width, size / height);
+
+    const actor = new Clutter.Actor({
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+        // usual hack for the usual bug in ClutterBinLayout...
+        x_expand: true,
+        y_expand: true,
+    });
+
+    const clone = new Clutter.Clone({
+        source: window,
+        width: width * scale,
+        height: height * scale,
+    });
+
+    // Adds the app window behind the toolbox if this is a toolbox window
+    const sessions = Main.wm._codeViewManager.sessions;
+    const session = sessions.find(s => s.toolbox === window);
+    if (session) {
+        const backClone = new Clutter.Clone({
+            source: session.app,
+            width: width * scale,
+            height: height * scale,
+        });
+        actor.add_child(backClone);
+    }
+
+    actor.add_child(clone);
+
+    return actor;
+}
+
 function isOverviewWindow(win) {
     return !win.get_meta_window().skip_taskbar && !win.get_meta_window()._hackIsInactiveWindow;
 }
@@ -2004,6 +2045,7 @@ function _wmConnect(signal, fn) {
 function enable() {
     // override alt-tab switchers
     Utils.override(AltTab, 'getWindows', getWindows);
+    Utils.override(AltTab, '_createWindowClone', createWindowClone);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
         get: function() {
             const cached = this._cachedWindows || [];

@@ -22,15 +22,16 @@
 //
 
 /* exported enable, disable */
+/* global global */
 
-const { Clutter, Flatpak, Gio, GLib, GObject, Graphene, Json, Pango, St } = imports.gi;
+const {Clutter, Flatpak, Gio, GLib, GObject, Graphene, Json, Pango, St} = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 
-const { Animation } = imports.ui.animation;
+const {Animation} = imports.ui.animation;
 const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
 const MessageList = imports.ui.messageList;
@@ -41,7 +42,7 @@ const Util = imports.misc.util;
 const Soundable = Hack.imports.ui.soundable;
 const SoundServer = Hack.imports.misc.soundServer;
 
-const { GtkNotificationDaemon } = NotificationDaemon;
+const {GtkNotificationDaemon} = NotificationDaemon;
 
 const CLUBHOUSE_BANNER_ANIMATION_TIME = 200;
 
@@ -108,7 +109,7 @@ class ClubhouseAnimation extends Animation {
             // If a custom sequence of frames wasn't provided,
             // fallback to play the frames in sequence.
             for (let i = 0; i < this._animations.get_n_children(); i++)
-                this._framesInfo.push({ frameIndex: i, frameDelay: this._speed });
+                this._framesInfo.push({frameIndex: i, frameDelay: this._speed});
         }
     }
 
@@ -172,7 +173,7 @@ class ClubhouseAnimation extends Animation {
         const framesInfo = [];
         for (const frameInfo of frames) {
             const [frameIndex, frameDelay] = this._parseFrame(frameInfo);
-            framesInfo.push({ frameIndex: frameIndex, frameDelay: frameDelay });
+            framesInfo.push({frameIndex, frameDelay});
         }
         return framesInfo;
     }
@@ -514,8 +515,8 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
             button.add_style_class_name('icon-button');
             const iconFile = Gio.File.new_for_uri(iconUrl);
-            const gicon = new Gio.FileIcon({ file: iconFile });
-            button.child = new St.Icon({ gicon: gicon });
+            const gicon = new Gio.FileIcon({file: iconFile});
+            button.child = new St.Icon({gicon});
         } else {
             button.add_style_class_name('text-button');
         }
@@ -551,7 +552,7 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
             // clipping the actor to avoid appearing in the right monitor
             const endClip = new Graphene.Rect({
-                origin: new Graphene.Point({ x: 0, y: 0 }),
+                origin: new Graphene.Point({x: 0, y: 0}),
                 size: new Graphene.Size({
                     width: this.width + CLUBHOUSE_BANNER_MARGIN,
                     height: this.height,
@@ -627,7 +628,7 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
         // clipping the actor to avoid appearing in the right monitor
         const endClip = new Graphene.Rect({
-            origin: new Graphene.Point({ x: 0, y: 0 }),
+            origin: new Graphene.Point({x: 0, y: 0}),
             size: new Graphene.Size({
                 width: 0,
                 height: this.height,
@@ -740,9 +741,9 @@ class ClubhouseQuestBanner extends ClubhouseNotificationBanner {
             if (!monitor)
                 return 0;
 
-            return (monitor.y + monitor.height
-                    - this.height - CLUBHOUSE_BANNER_MARGIN
-                    - Main.panel.get_height());
+            return monitor.y + monitor.height -
+                   this.height - CLUBHOUSE_BANNER_MARGIN -
+                   Main.panel.get_height();
         } else {
             return CLUBHOUSE_BANNER_MARGIN;
         }
@@ -1091,7 +1092,7 @@ var Component = GObject.registerClass({
 
             if (!this._questBanner) {
                 this._questBanner = notification.createBanner(!this._hasForegroundQuest,
-                    this._clubhouseAnimator, this._questBannerPosition, (banner) => {
+                    this._clubhouseAnimator, this._questBannerPosition, banner => {
                         Main.layoutManager.addChrome(banner);
                         banner.reposition();
                         if (this._itemBanner)
@@ -1105,7 +1106,7 @@ var Component = GObject.registerClass({
             });
 
             if (!this._itemBanner) {
-                this._itemBanner = notification.createBanner((banner) => {
+                this._itemBanner = notification.createBanner(banner => {
                     Main.layoutManager.addChrome(banner);
                     banner.reposition();
                     if (this._questBanner)

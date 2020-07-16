@@ -1,4 +1,5 @@
 /* exported enable, disable */
+/* global global */
 'use strict';
 
 /**
@@ -7,9 +8,8 @@
  *
  */
 
-const { GLib, GObject, Clutter, Meta } = imports.gi;
+const {GLib, GObject, Clutter, Meta} = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
-const Extension = ExtensionUtils.getCurrentExtension();
 const Hack = ExtensionUtils.getCurrentExtension();
 const Settings = Hack.imports.utils.getSettings();
 
@@ -19,88 +19,122 @@ const CORNER_RESIZING_DIVIDER = 6;
 function Prefs() {
     this.FRICTION = {
         key: 'wobbly-spring-friction',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
+        get() {
+            return Settings.get_double(this.key);
+        },
+        set(v) {
+            Settings.set_double(this.key, v);
+        },
+        changed(cb) {
+            return Settings.connect(`changed::${this.key}`, cb);
+        },
+        disconnect(...args) {
+            return Settings.disconnect(...args);
+        },
     };
 
     this.SPRING = {
         key: 'wobbly-spring-k',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
+        get() {
+            return Settings.get_double(this.key);
+        },
+        set(v) {
+            Settings.set_double(this.key, v);
+        },
+        changed(cb) {
+            return Settings.connect(`changed::${this.key}`, cb);
+        },
+        disconnect(...args) {
+            return Settings.disconnect(...args);
+        },
     };
 
     this.MANUAL_RESTORE_FACTOR = {
         key: 'wobbly-slowdown-factor',
-        get: function () { return Settings.get_double(this.key); },
-        set: function (v) { Settings.set_double(this.key, v); },
-        changed: function (cb) { return Settings.connect('changed::' + this.key, cb); },
-        disconnect: function () { return Settings.disconnect.apply(settings, arguments); },
+        get() {
+            return Settings.get_double(this.key);
+        },
+        set(v) {
+            Settings.set_double(this.key, v);
+        },
+        changed(cb) {
+            return Settings.connect(`changed::${this.key}`, cb);
+        },
+        disconnect(...args) {
+            return Settings.disconnect(...args);
+        },
     };
 
     this.SKIP_FRAMES_BEFORE_SPRING_START = {
         key: 'skip-frames-before-spring-start',
-        get: function () { return 1; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
+        get() {
+            return 1;
+        },
+        set() {},
+        changed() {},
+        disconnect() {},
     };
 
     this.MAXIMIZE_EFFECT_ENABLED = {
         key: 'maximize-effect-enabled',
-        get: function () { return true; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
+        get() {
+            return true;
+        },
+        set() {},
+        changed() {},
+        disconnect() {},
     };
 
     this.RESIZE_EFFECT_ENABLED = {
         key: 'resize-effect-enabled',
-        get: function () { return true; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
+        get() {
+            return true;
+        },
+        set() {},
+        changed() {},
+        disconnect() {},
     };
 
     this.X_TILES = {
         key: 'x-tiles',
-        get: function () { return 6; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
+        get() {
+            return 6;
+        },
+        set() {},
+        changed() {},
+        disconnect() {},
     };
 
     this.Y_TILES = {
         key: 'y-tiles',
-        get: function () { return 4; },
-        set: function () {},
-        changed: function () {},
-        disconnect: function () {},
+        get() {
+            return 4;
+        },
+        set() {},
+        changed() {},
+        disconnect() {},
     };
-};
+}
 
 const EFFECT_NAME = 'wobbly-effect';
 const MIN_MAX_EFFECT_NAME = 'min-max-wobbly-effect';
 
 function is_managed_op(op) {
-    return Meta.GrabOp.MOVING == op ||
-           Meta.GrabOp.RESIZING_W == op ||
-           Meta.GrabOp.RESIZING_E == op ||
-           Meta.GrabOp.RESIZING_S == op ||
-           Meta.GrabOp.RESIZING_N == op ||
-           Meta.GrabOp.RESIZING_NW == op ||
-           Meta.GrabOp.RESIZING_NE == op ||
-           Meta.GrabOp.RESIZING_SE == op ||
-           Meta.GrabOp.RESIZING_SW == op;
+    return Meta.GrabOp.MOVING === op ||
+           Meta.GrabOp.RESIZING_W === op ||
+           Meta.GrabOp.RESIZING_E === op ||
+           Meta.GrabOp.RESIZING_S === op ||
+           Meta.GrabOp.RESIZING_N === op ||
+           Meta.GrabOp.RESIZING_NW === op ||
+           Meta.GrabOp.RESIZING_NE === op ||
+           Meta.GrabOp.RESIZING_SE === op ||
+           Meta.GrabOp.RESIZING_SW === op;
 }
 
 function get_actor(window) {
-    if (window) {
+    if (window)
         return window.get_compositor_private();
-    }
+
     return null;
 }
 
@@ -110,44 +144,39 @@ function has_wobbly_effect(actor) {
 
 function add_actor_wobbly_effect(actor, op) {
     if (actor) {
-        if (Meta.GrabOp.MOVING == op) {
-            actor.add_effect_with_name(EFFECT_NAME, new WobblyEffect({op: op}));
-        } else {
-            actor.add_effect_with_name(EFFECT_NAME, new ResizeEffect({op: op}));
-        }
+        if (Meta.GrabOp.MOVING === op)
+            actor.add_effect_with_name(EFFECT_NAME, new WobblyEffect({op}));
+        else
+            actor.add_effect_with_name(EFFECT_NAME, new ResizeEffect({op}));
     }
 }
 
 function add_actor_min_max_effect(actor, op) {
-    if (actor) {
-        actor.add_effect_with_name(MIN_MAX_EFFECT_NAME, new MinimizeMaximizeEffect({op: op}));
-    }
+    if (actor)
+        actor.add_effect_with_name(MIN_MAX_EFFECT_NAME, new MinimizeMaximizeEffect({op}));
 }
 
 function stop_actor_wobbly_effect(actor) {
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
-        if (effect) {
+        if (effect)
             effect.stop();
-        }
     }
 }
 
 function destroy_actor_wobbly_effect(actor) {
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
-        if (effect) {
+        if (effect)
             effect.destroy();
-        }
     }
 }
 
 function destroy_actor_min_max_effect(actor) {
     if (actor) {
         let effect = actor.get_effect(MIN_MAX_EFFECT_NAME);
-        if (effect) {
+        if (effect)
             effect.destroy();
-        }
     }
 }
 
@@ -187,7 +216,7 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.yDeltaFreezed = 0;
             this.divider = 1;
 
-            //Init stettings
+            // Init stettings
             let prefs = new Prefs();
             this.MAXIMIZE_EFFECT_ENABLED = prefs.MAXIMIZE_EFFECT_ENABLED.get();
             this.RESIZE_EFFECT_ENABLED = prefs.RESIZE_EFFECT_ENABLED.get();
@@ -225,7 +254,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
         start_timer(timerFunction) {
             this.stop_timer();
-            this.timerId = new Clutter.Timeline({ duration: CLUTTER_TIMELINE_DURATION });
+            this.timerId = new Clutter.Timeline({duration: CLUTTER_TIMELINE_DURATION});
             this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
             this.timerId.start();
         }
@@ -270,7 +299,7 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.start_timer(this.on_stop_tick_elapsed.bind(this));
         }
 
-        on_stop_tick_elapsed(timer, msecs) {
+        on_stop_tick_elapsed() {
             this.i++;
 
             this.xDelta = this.xDeltaStop * Math.sin(this.i) / Math.exp(this.i / this.END_EFFECT_DIVIDER, 2);
@@ -286,12 +315,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
 var WobblyEffect = GObject.registerClass({},
     class WobblyEffect extends AbstractCommonEffect {
-
-        _init(params = {}) {
-            super._init(params);
-        }
-
-        on_actor_event(actor, allocation, flags) {
+        on_actor_event(actor, allocation) {
             [this.xNew, this.yNew] = allocation.get_origin();
             [this.width, this.height] = actor.get_size();
 
@@ -310,7 +334,7 @@ var WobblyEffect = GObject.registerClass({},
 
             [this.xOld, this.yOld] = [this.xNew, this.yNew];
 
-            this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
+            this.j = this.STOP_COUNTER + this.STOP_COUNTER_EXTRA;
             this.xDeltaFreezed = this.xDelta * this.END_FREEZE_X_FACTOR;
             this.yDeltaFreezed = this.yDelta * this.END_FREEZE_Y_FACTOR;
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
@@ -318,7 +342,7 @@ var WobblyEffect = GObject.registerClass({},
             return false;
         }
 
-        on_tick_elapsed(timer, msec) {
+        on_tick_elapsed() {
             this.xDelta /= this.RESTORE_FACTOR;
             this.yDelta /= this.RESTORE_FACTOR;
             this.yDeltaStretch /= this.RESTORE_FACTOR;
@@ -339,19 +363,19 @@ var WobblyEffect = GObject.registerClass({},
         }
 
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2
-                + Math.sign(this.xPickedUp - v.x) * (this.xPickedUp - v.x) / this.width * this.xDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2 +
+                Math.sign(this.xPickedUp - v.x) * (this.xPickedUp - v.x) / this.width * this.xDeltaStopMoving;
 
             if (this.xPickedUp < w / 5) {
-                v.y += this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
-                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+                v.y += this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height) +
+                    Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
             } else if (this.xPickedUp > w * 0.8) {
-                v.y += this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
-                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+                v.y += this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height) +
+                    Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
             } else {
-                v.y += Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height)
-                    + this.yDeltaStretch * v.y / h
-                    + Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
+                v.y += Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) / (Math.pow(this.width, 2) * this.height) +
+                    this.yDeltaStretch * v.y / h +
+                    Math.sign(this.yPickedUp - v.y) * (this.yPickedUp - v.y) / this.height * this.yDeltaStopMoving;
             }
         }
     }
@@ -366,7 +390,7 @@ var ResizeEffect = GObject.registerClass({},
             this.effectDisabled = !this.RESIZE_EFFECT_ENABLED;
         }
 
-        on_actor_event(actor, allocation, flags) {
+        on_actor_event(actor) {
             [this.xNew, this.yNew] = global.get_pointer();
 
             if (this.initOldValues) {
@@ -384,47 +408,47 @@ var ResizeEffect = GObject.registerClass({},
             [this.xOld, this.yOld] = [this.xNew, this.yNew];
         }
 
-        on_tick_elapsed(timer, msecs) {
+        on_tick_elapsed() {
             return true;
         }
 
         vfunc_deform_vertex(w, h, v) {
             switch (this.operationType) {
-                case Meta.GrabOp.RESIZING_W:
-                    v.x += this.xDelta * (w - v.x) * Math.pow(v.y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
-                    break;
+            case Meta.GrabOp.RESIZING_W:
+                v.x += this.xDelta * (w - v.x) * Math.pow(v.y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
+                break;
 
-                case Meta.GrabOp.RESIZING_E:
-                    v.x += this.xDelta * v.x * Math.pow(v.y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
-                    break;
+            case Meta.GrabOp.RESIZING_E:
+                v.x += this.xDelta * v.x * Math.pow(v.y - this.yPickedUp, 2) / (Math.pow(h, 2) * w);
+                break;
 
-                case Meta.GrabOp.RESIZING_S:
-                    v.y += this.yDelta * v.y * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_S:
+                v.y += this.yDelta * v.y * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
+                break;
 
-                case Meta.GrabOp.RESIZING_N:
-                    v.y += this.yDelta * (h - v.y) * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_N:
+                v.y += this.yDelta * (h - v.y) * Math.pow(v.x - this.xPickedUp, 2) / (Math.pow(w, 2) * h);
+                break;
 
-                case Meta.GrabOp.RESIZING_NW:
-                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
-                    v.y +=  this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_NW:
+                v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
+                v.y +=  this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
+                break;
 
-                case Meta.GrabOp.RESIZING_NE:
-                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
-                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_NE:
+                v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(v.y, 2) / (Math.pow(h, 2) * w);
+                v.y += this.yDelta / CORNER_RESIZING_DIVIDER * (h - v.y) * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);
+                break;
 
-                case Meta.GrabOp.RESIZING_SE:
-                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(h - v.y, 2) / (Math.pow(h, 2) * w);
-                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_SE:
+                v.x += this.xDelta / CORNER_RESIZING_DIVIDER * v.x * Math.pow(h - v.y, 2) / (Math.pow(h, 2) * w);
+                v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(w - v.x, 2) / (Math.pow(w, 2) * h);
+                break;
 
-                case Meta.GrabOp.RESIZING_SW:
-                    v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y - h, 2) / (Math.pow(h, 2) * w);
-                    v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
-                    break;
+            case Meta.GrabOp.RESIZING_SW:
+                v.x += this.xDelta / CORNER_RESIZING_DIVIDER * (w - v.x) * Math.pow(v.y - h, 2) / (Math.pow(h, 2) * w);
+                v.y += this.yDelta / CORNER_RESIZING_DIVIDER * v.y * Math.pow(v.x, 2) / (Math.pow(w, 2) * h);
+                break;
             }
 
         }
@@ -437,16 +461,16 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
         _init(params = {}) {
             super._init(params);
 
-            this.j = (this.STOP_COUNTER + this.STOP_COUNTER_EXTRA);
+            this.j = this.STOP_COUNTER + this.STOP_COUNTER_EXTRA;
             this.xDeltaFreezed = this.DELTA_FREEZED;
             this.yDeltaFreezed = this.DELTA_FREEZED;
 
             this.effectDisabled = !this.MAXIMIZE_EFFECT_ENABLED;
         }
 
-        on_actor_event(actor, allocation, flags) {}
+        on_actor_event() {}
 
-        on_tick_elapsed(timer, msecs) {
+        on_tick_elapsed() {
             this.j--;
             if (this.j < 0) {
                 this.j = 0;
@@ -454,8 +478,8 @@ var MinimizeMaximizeEffect = GObject.registerClass({},
                 this.xDeltaFreezed /= 1.2;
                 this.yDeltaFreezed /= 1.2;
 
-                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (this.STOP_COUNTER));
-                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 8 * this.j / (this.STOP_COUNTER));
+                this.xDeltaStopMoving = this.xDeltaFreezed * Math.sin(Math.PI * 8 * this.j / this.STOP_COUNTER);
+                this.yDeltaStopMoving = this.yDeltaFreezed * Math.sin(Math.PI * 8 * this.j / this.STOP_COUNTER);
 
                 this.invalidate();
             }
@@ -478,7 +502,6 @@ let grabOpEndId = 0;
 let resizeMinMaxOpId = 0;
 let timeoutWobblyId = 0;
 let timeoutMinMaxId = 0;
-let originalSpeed = 0;
 let wobblyEnabledId = 0;
 
 function stop_wobbly_timer() {
@@ -496,26 +519,24 @@ function stop_min_max_timer() {
 }
 
 function enable() {
-    if (wobblyEnabledId) {
+    if (wobblyEnabledId)
         Settings.disconnect(wobblyEnabledId);
-    }
-    if (grabOpBeginId) {
+
+    if (grabOpBeginId)
         global.display.disconnect(grabOpBeginId);
-    }
-    if (grabOpEndId) {
+
+    if (grabOpEndId)
         global.display.disconnect(grabOpEndId);
-    }
-    if (resizeMinMaxOpId) {
+
+    if (resizeMinMaxOpId)
         global.window_manager.disconnect(resizeMinMaxOpId);
-    }
 
     wobblyEnabledId = Settings.connect('changed::wobbly-effect', () => {
         const enabled = Settings.get_boolean('wobbly-effect');
-        if (enabled) {
+        if (enabled)
             enable();
-        } else {
+        else
             disable(false);
-        }
     });
 
     if (!Settings.get_boolean('wobbly-effect')) {
@@ -524,9 +545,8 @@ function enable() {
     }
 
     grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
-        if (!is_managed_op(op)) {
+        if (!is_managed_op(op))
             return;
-        }
 
         let actor = get_actor(window);
         if (actor) {
@@ -539,7 +559,7 @@ function enable() {
         }
     });
 
-    grabOpEndId = global.display.connect('grab-op-end', (display, screen, window, op) => {
+    grabOpEndId = global.display.connect('grab-op-end', (display, screen, window) => {
         let actor = get_actor(window);
         if (actor) {
             stop_actor_wobbly_effect(actor);
@@ -547,10 +567,9 @@ function enable() {
             timeoutWobblyId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
                 stop_wobbly_timer();
 
-                let actor = get_actor(window);
-                if (actor) {
+                actor = get_actor(window);
+                if (actor)
                     destroy_actor_wobbly_effect(actor);
-                }
 
                 return false;
             });
@@ -558,9 +577,8 @@ function enable() {
     });
 
     resizeMinMaxOpId = global.window_manager.connect('size-change', (e, actor, op) => {
-        if (op == 1 && has_wobbly_effect(actor)) {
+        if (op === 1 && has_wobbly_effect(actor))
             return;
-        }
 
         stop_wobbly_timer();
         destroy_actor_wobbly_effect(actor);
@@ -572,9 +590,8 @@ function enable() {
         timeoutMinMaxId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_DELAY, () => {
             stop_min_max_timer();
 
-            if (actor) {
+            if (actor)
                 destroy_actor_min_max_effect(actor);
-            }
 
             return false;
         });
@@ -602,7 +619,7 @@ function disable(disconnect = true) {
 
     stop_wobbly_timer();
 
-    global.get_window_actors().forEach((actor) => {
+    global.get_window_actors().forEach(actor => {
         destroy_actor_wobbly_effect(actor);
         destroy_actor_min_max_effect(actor);
     });

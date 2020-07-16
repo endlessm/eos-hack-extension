@@ -1,11 +1,11 @@
-/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext */
+/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp */
 
-const { Gio, GLib, Shell } = imports.gi;
-const { config } = imports.misc;
+const {Gio, GLib, Shell} = imports.gi;
+const {config} = imports.misc;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
-var gettext = Gettext.gettext;
+var {gettext} = Gettext;
 
 function getMigrationSettings() {
     const dir = Extension.dir.get_child('migration').get_path();
@@ -20,7 +20,7 @@ function getMigrationSettings() {
     if (!schema)
         throw new Error('Schema missing.');
 
-    return new Gio.Settings({ settings_schema: schema });
+    return new Gio.Settings({settings_schema: schema});
 }
 
 function getSettings() {
@@ -36,14 +36,13 @@ function getSettings() {
     if (!schema)
         throw new Error('Schema missing.');
 
-    return new Gio.Settings({ settings_schema: schema });
+    return new Gio.Settings({settings_schema: schema});
 }
 
 function tryMigrateSettings() {
     const settings = getSettings();
-    if (settings.get_boolean('hack-settings-migrated')) {
+    if (settings.get_boolean('hack-settings-migrated'))
         return;
-    }
 
     const oldSettings = getMigrationSettings();
     const boolSettings = [
@@ -59,10 +58,10 @@ function tryMigrateSettings() {
         'wobbly-object-movement-range',
     ];
 
-    boolSettings.forEach((k) => {
+    boolSettings.forEach(k => {
         settings.set_boolean(k, oldSettings.get_boolean(k));
     });
-    floatSettings.forEach((k) => {
+    floatSettings.forEach(k => {
         settings.set_double(k, oldSettings.get_double(k));
     });
 
@@ -78,7 +77,7 @@ function loadInterfaceXML(iface) {
     const f = Gio.File.new_for_uri(uri);
 
     try {
-        const [ok_, bytes] = f.load_contents(null);
+        const [, bytes] = f.load_contents(null);
         if (bytes instanceof Uint8Array)
             xml = imports.byteArray.toString(bytes);
         else
@@ -167,8 +166,8 @@ class ObjectsMap {
     }
 };
 
-let _currentDesktopsMatches = {};
-// is:
+const _currentDesktopsMatches = {};
+// desktopIs:
 // @name: desktop string you want to assert if it matches the current desktop env
 //
 // The function examples XDG_CURRENT_DESKTOP and return if the current desktop
@@ -179,31 +178,22 @@ let _currentDesktopsMatches = {};
 //
 // This function is a copy of:
 // https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
-function is(name, maxVersion = '3.36') {
-    if (config.PACKAGE_VERSION > maxVersion) {
+function desktopIs(name, maxVersion = '3.36') {
+    if (config.PACKAGE_VERSION > maxVersion)
         return false;
-    }
 
-    if (_currentDesktopsMatches[name] !== undefined) {
+    if (typeof _currentDesktopsMatches[name] !== 'undefined')
         return _currentDesktopsMatches[name];
-    }
 
-    let desktopsEnv = GLib.getenv('XDG_CURRENT_DESKTOP');
+    const desktopsEnv = GLib.getenv('XDG_CURRENT_DESKTOP');
     if (!desktopsEnv) {
         _currentDesktopsMatches[name] = false;
         return false;
     }
 
-    let desktops = desktopsEnv.split(":");
-    for (let i = 0; i < desktops.length; i++) {
-        if (desktops[i] === name) {
-            _currentDesktopsMatches[name] = true;
-            return true;
-        }
-    }
-
-    _currentDesktopsMatches[name] = false;
-    return false;
+    const hasMatch = desktopsEnv.split(':').some(desktop => desktop === name);
+    _currentDesktopsMatches[name] = hasMatch;
+    return hasMatch;
 }
 
 function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {

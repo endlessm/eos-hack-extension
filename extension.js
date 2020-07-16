@@ -20,15 +20,15 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 
 // To import custom files
-const { ui } = Hack.imports;
-const { tryMigrateSettings, is } = Hack.imports.utils;
+const {ui} = Hack.imports;
+const {tryMigrateSettings, desktopIs} = Hack.imports.utils;
 const Service = Hack.imports.service;
 
 function enable() {
     tryMigrateSettings();
 
     // Only enable if we're in EOS
-    if (is('endless')) {
+    if (desktopIs('endless')) {
         // Hack desktop icon
         ui.appDisplay.enable();
     }
@@ -43,9 +43,9 @@ function enable() {
 }
 
 function disable() {
-    if (is('endless')) {
+    if (desktopIs('endless'))
         ui.appDisplay.disable();
-    }
+
     ui.clubhouse.disable();
     ui.codeView.disable();
 

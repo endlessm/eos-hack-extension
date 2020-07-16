@@ -1,6 +1,6 @@
 /* exported Button */
 
-const { GObject, St } = imports.gi;
+const {GObject, St} = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();

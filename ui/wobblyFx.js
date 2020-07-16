@@ -151,7 +151,7 @@ var AbstractCommonEffect = GObject.registerClass({},
 
                 [this.width, this.height] = actor.get_size();
 
-                this.allocationChangedEvent = actor.connect('allocation-changed', this.on_actor_event.bind(this));
+                this.allocationChangedEvent = actor.connect('notify::allocation', this.on_actor_event.bind(this));
                 this.paintEvent = actor.connect('paint', () => {});
 
                 this.start_timer(this.on_tick_elapsed.bind(this));
@@ -221,7 +221,10 @@ var AbstractCommonEffect = GObject.registerClass({},
 
 var WobblyEffect = GObject.registerClass({},
     class WobblyEffect extends AbstractCommonEffect {
-        on_actor_event(actor, allocation) {
+        on_actor_event() {
+            const actor = this.get_actor();
+            const {allocation} = actor;
+
             [this.xNew, this.yNew] = allocation.get_origin();
             [this.width, this.height] = actor.get_size();
 

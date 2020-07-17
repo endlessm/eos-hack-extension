@@ -1772,6 +1772,7 @@ var CodeViewManager = GObject.registerClass({
 
 // Monkey patching
 
+const AppDisplay = imports.ui.appDisplay;
 const AltTab = imports.ui.altTab;
 const Workspace = imports.ui.workspace;
 
@@ -1858,6 +1859,45 @@ function is_speedwagon_window(metaWindow) {
     }
 
     return Shell.WindowTracker.is_speedwagon_window(metaWindow);
+}
+
+function proxyApp(...args) {
+    Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
+    const originalApp = this.app;
+    this._originalApp = originalApp;
+    const id = this.app.get_id().slice(0, -8);
+
+    const handler = {
+        get(target, name) {
+            if (name === 'get_windows')
+                return getWindowsForApp.bind(this, target);
+            if (name === 'activate' && id  === 'com.hack_computer.Clubhouse') {
+                return () => {
+                    // We should activate the clubhouse using the DBus API because some
+                    // toolbox windows shares the same app so activating the app could not
+                    // show the clubhouse window sometimes.
+                    const params = GLib.Variant.new('(a{sv})', [{}]);
+                    Gio.DBus.session.call(
+                        'com.hack_computer.Clubhouse',
+                        '/com/hack_computer/Clubhouse',
+                        'org.gtk.Application',
+                        'Activate', params, null,
+                        Gio.DBusCallFlags.NONE,
+                        -1, null,
+                        (conn, res) => conn.call_finish(res)
+                    );
+                };
+            }
+
+            const obj = target[name];
+            if (typeof obj === 'function')
+                return obj.bind(originalApp);
+
+            return obj;
+        },
+    };
+
+    this.app = new Proxy(this.app, handler);
 }
 
 function addButton(app) {
@@ -2058,6 +2098,7 @@ function enable() {
     });
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
+    Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
@@ -2091,6 +2132,7 @@ function disable() {
             this._cachedWindows = windowList;
         },
     });
+    Utils.override(AppDisplay.AppIcon);
 
     Utils.restore(Workspace.Workspace);
 

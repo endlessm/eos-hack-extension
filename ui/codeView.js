@@ -1830,22 +1830,33 @@ function proxyApp(...args) {
         get(target, name) {
             if (name === 'get_windows')
                 return getWindowsForApp.bind(this, target);
-            if (name === 'activate' && id  === 'com.hack_computer.Clubhouse') {
-                return () => {
-                    // We should activate the clubhouse using the DBus API because some
-                    // toolbox windows shares the same app so activating the app could not
-                    // show the clubhouse window sometimes.
-                    const params = GLib.Variant.new('(a{sv})', [{}]);
-                    Gio.DBus.session.call(
-                        'com.hack_computer.Clubhouse',
-                        '/com/hack_computer/Clubhouse',
-                        'org.gtk.Application',
-                        'Activate', params, null,
-                        Gio.DBusCallFlags.NONE,
-                        -1, null,
-                        (conn, res) => conn.call_finish(res)
-                    );
-                };
+            if (name === 'activate') {
+                if (id === 'com.hack_computer.Clubhouse') {
+                    return () => {
+                        // We should activate the clubhouse using the DBus API because some
+                        // toolbox windows shares the same app so activating the app could not
+                        // show the clubhouse window sometimes.
+                        const params = GLib.Variant.new('(a{sv})', [{}]);
+                        Gio.DBus.session.call(
+                            'com.hack_computer.Clubhouse',
+                            '/com/hack_computer/Clubhouse',
+                            'org.gtk.Application',
+                            'Activate', params, null,
+                            Gio.DBusCallFlags.NONE,
+                            -1, null,
+                            (conn, res) => conn.call_finish(res)
+                        );
+                    };
+                }
+
+                // Activate the toolbox window if the app is a coding session and it's flipped
+                const sessions = Main.wm._codeViewManager.sessions;
+                const appSession = sessions.find(s => s._shellApp === originalApp);
+                if (appSession && appSession.flipped) {
+                    return () => {
+                        appSession.toolbox.meta_window.activate(global.get_current_time());
+                    };
+                }
             }
 
             const obj = target[name];

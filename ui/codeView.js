@@ -528,8 +528,7 @@ var CodingSession = GObject.registerClass({
         this._hackable = true;
 
         this._grabbed = false;
-        this._backParent = null;
-        this._backConstraint = null;
+        this._backClone = null;
         this._grabTimeoutId = 0;
 
         super._init(params);
@@ -640,7 +639,7 @@ var CodingSession = GObject.registerClass({
     }
 
     _attachBackendWindow() {
-        if (this._backParent)
+        if (this._backClone)
             return;
 
         const frontActor = this._actorForCurrentState();
@@ -649,20 +648,20 @@ var CodingSession = GObject.registerClass({
         if (!backActor)
             return;
 
-        this._backParent = backActor.get_parent();
-        this._backParent.remove_child(backActor);
-        frontActor.insert_child_at_index(backActor, 0);
-        this._setEffectsEnabled(backActor, this.flipped);
-
-        // Constraint to avoid inside actor movement
-        const path = new Clutter.Path();
-        path.add_move_to(0, 0);
-        this._backConstraint = new Clutter.PathConstraint({ path: path, offset: 0 });
-        backActor.add_constraint(this._backConstraint);
+        this._backClone = new Clutter.Clone({
+            source: backActor,
+            width: frontActor.width,
+            height: frontActor.height,
+        });
+        this._setEffectsEnabled(this._backClone, true);
+        this._backClone.pivot_point = new Graphene.Point({x: 0.5, y: 0.5});
+        this._backClone.rotation_angle_y = backActor.rotation_angle_y;
+        frontActor.insert_child_at_index(this._backClone, 0);
+        backActor.opacity = 0;
     }
 
     _detachBackendWindow() {
-        if (!this._backParent)
+        if (!this._backClone)
             return;
 
         const frontActor = this._actorForCurrentState();
@@ -671,17 +670,9 @@ var CodingSession = GObject.registerClass({
         if (!backActor)
             return;
 
-        if (this._backConstraint) {
-            backActor.remove_constraint(this._backConstraint);
-            this._backConstraint = null;
-        }
-
-        const [x, y] = frontActor.get_position();
-        backActor.set_position(x, y);
-
-        frontActor.remove_child(backActor);
-        this._backParent.insert_child_below(backActor, frontActor);
-        this._backParent = null;
+        frontActor.remove_child(this._backClone);
+        backActor.opacity = 255;
+        this._backClone = null;
     }
 
     _ensureButton() {

@@ -2016,15 +2016,6 @@ function _windowGrabbed(display, screen, win, op) {
         return;
 
     const actor = win.get_compositor_private();
-    if (!actor._animatableSurface)
-        return;
-
-    // This is an event that may cause an animation
-    // on the window.
-    const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
-    if (attachedEffect)
-        attachedEffect.activate('move', { grabbed: true });
-
     this._codeViewManager.handleWindowGrab(actor, true);
 }
 
@@ -2035,13 +2026,8 @@ function _windowUngrabbed(display, op, win) {
         return;
 
     const actor = win.get_compositor_private();
-    if (!actor || !actor._animatableSurface)
+    if (!actor)
         return;
-
-    // This is an event that may cause an animation on the window
-    const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
-    if (attachedEffect)
-        attachedEffect.activate('move', { grabbed: false });
 
     this._codeViewManager.handleWindowGrab(actor, false);
 }

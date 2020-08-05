@@ -34,6 +34,7 @@ const { Animation } = imports.ui.animation;
 const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
 const MessageList = imports.ui.messageList;
+const Layout = imports.ui.layout;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
 const Util = imports.misc.util;
@@ -1214,6 +1215,81 @@ function activateActionFull(actionId, target, hideOverview) {
 }
 
 var CLUBHOUSE = null;
+var NOTIFY_CLONE = null;
+var MAP_WINDOW_HANDLER = null;
+var DESTROY_WINDOW_HANDLER = null;
+var SHOW_OVERVIEW_HANDLER = null;
+var HIDE_OVERVIEW_HANDLER = null;
+
+function _destroyNotifyClone() {
+    if (NOTIFY_CLONE) {
+        NOTIFY_CLONE.destroy();
+        NOTIFY_CLONE = null;
+    }
+}
+
+function mapNotifyWindow(win, actor) {
+    if (!win || win.get_role() !== 'clubhouse-msg-notify')
+        return;
+
+    if (!Main.overview.visible)
+        return;
+
+    _destroyNotifyClone();
+
+    const cloneActor = new Clutter.Clone({
+        source: actor,
+        width: actor.width,
+        height: actor.height,
+        x: actor.x,
+        y: actor.y,
+        reactive: true,
+    });
+
+    cloneActor.connect('button-press-event', (actor, ev, data) => {
+        const [x, y] = ev.get_coords();
+        const actorX = x - cloneActor.x;
+        const actorY = y - cloneActor.y;
+        CLUBHOUSE.proxy.notificationEventRemote(actorX, actorY, (results, err) => {
+            if (err)
+                logError(err, 'Error sending click event to clubhouse');
+        });
+    });
+
+    const positionHandler = win.connect('position-changed', win => {
+        cloneActor.set_position(actor.x, actor.y);
+    });
+
+    const sizeHandler = win.connect('size-changed', win => {
+        const rect = win.get_frame_rect();
+        cloneActor.set_size(rect.width, rect.height);
+    });
+
+    cloneActor.connect('destroy', () => {
+        win.disconnect(positionHandler);
+        win.disconnect(sizeHandler);
+    });
+
+    Main.layoutManager.addChrome(cloneActor);
+
+    NOTIFY_CLONE = cloneActor;
+}
+
+function destroyNotifyWindow(win) {
+    if (!win || win.get_role() !== 'clubhouse-msg-notify')
+        return;
+    _destroyNotifyClone();
+}
+
+function showOverview() {
+    const app = Utils.getClubhouseApp();
+
+    _destroyNotifyClone();
+
+    const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
+    if (notify)
+        mapNotifyWindow(notify, notify.get_compositor_private());
+}
 
 function enable() {
     CLUBHOUSE = new Component();
@@ -1227,13 +1303,33 @@ function enable() {
 
     Utils.override(NotificationDaemon.GtkNotificationDaemonAppSource, 'activateActionFull', activateActionFull);
     Utils.override(NotificationDaemon.GtkNotificationDaemonAppSource, 'activateAction', activateAction);
+
+    SHOW_OVERVIEW_HANDLER = Main.overview.connect('showing', showOverview);
+    HIDE_OVERVIEW_HANDLER = Main.overview.connect('hidden', _destroyNotifyClone);
+
+    MAP_WINDOW_HANDLER = global.window_manager.connect('map', (wm, actor) => {
+        if (actor && actor.metaWindow)
+            mapNotifyWindow(actor.metaWindow, actor);
+    });
+
+    DESTROY_WINDOW_HANDLER = global.window_manager.connect('destroy', (wm, actor) => {
+        if (actor && actor.metaWindow)
+            destroyNotifyWindow(actor.metaWindow);
+    });
 }
 
 function disable() {
+    Main.overview.disconnect(SHOW_OVERVIEW_HANDLER);
+    Main.overview.disconnect(HIDE_OVERVIEW_HANDLER);
+    global.window_manager.disconnect(MAP_WINDOW_HANDLER);
+    global.window_manager.disconnect(DESTROY_WINDOW_HANDLER);
+
     if (CLUBHOUSE) {
         CLUBHOUSE.disable();
         CLUBHOUSE = null;
     }
+
+    _destroyNotifyClone();
 
     Utils.restore(MessageList.URLHighlighter);
     Utils.restore(MessageList.Message);

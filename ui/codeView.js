@@ -2120,7 +2120,7 @@ function disable() {
             this._cachedWindows = windowList;
         },
     });
-    Utils.override(AppDisplay.AppIcon);
+    Utils.restore(AppDisplay.AppIcon);
 
     Utils.restore(Workspace.Workspace);
 

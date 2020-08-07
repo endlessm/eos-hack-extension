@@ -1,5 +1,5 @@
 project('hack-extension',
-  version: '3.8.0',
+  version: '3.36.0',
   meson_version: '>= 0.40.0'
 )
 
@@ -34,6 +34,7 @@ have_schemas = schemas.length() > 0
 
 metaconf = configuration_data()
 metaconf.set('uuid', uuid)
+metaconf.set('version', 1)
 metaconf.set('shell_version', shell_version)
 if have_schemas
   metaconf.set('settings_schema', schemas[0])

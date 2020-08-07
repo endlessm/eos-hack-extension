@@ -1,5 +1,6 @@
 {
 "uuid": "@uuid@",
+"version": "@version@",
 "name": "Hack",
 "description": "Add the Flip to Hack experience to the desktop",
 "settings-schema": "@settings_schema@",

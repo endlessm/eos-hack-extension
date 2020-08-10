@@ -1627,7 +1627,8 @@ var CodeViewManager = GObject.registerClass({
         // HackUnlock and HackToolbox are inside the com.hack_computer.Clubhouse flatpak
         // and have the Clubhouse appInfo, so we should ignore those cases here
         // to be able to show the HackUnlock and HackToolbox windows
-        } else if (gtkId !== 'com.hack_computer.HackUnlock' &&
+        } else if (!gtkId.startsWith('com.hack_computer.Clubhouse.') &&
+                   gtkId !== 'com.hack_computer.HackUnlock' &&
                    gtkId !== 'com.hack_computer.HackToolbox' &&
                    gtkId !== 'com.endlessm.HackToolbox') {
             // Do not manage apps that are NoDisplay=true

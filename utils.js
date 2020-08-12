@@ -1,9 +1,10 @@
-/* exported getSettings, loadInterfaceXML, override, overrideProperty, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp */
+/* exported getSettings, loadInterfaceXML, override, overrideProperty, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp, waitForExtension, runWithExtension */
 
 const {Gio, GLib, Shell} = imports.gi;
 const {config} = imports.misc;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
+const Main = imports.ui.main;
 
 var {gettext} = Gettext;
 
@@ -196,7 +197,7 @@ const _currentDesktopsMatches = {};
 //
 // This function is a copy of:
 // https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
-function desktopIs(name, maxVersion = '3.36') {
+function desktopIs(name, maxVersion = '3.38') {
     if (config.PACKAGE_VERSION > maxVersion)
         return false;
 
@@ -216,4 +217,28 @@ function desktopIs(name, maxVersion = '3.36') {
 
 function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {
     return Shell.AppSystem.get_default().lookup_app(`${clubhouseId}.desktop`);
+}
+
+// This function will query if the extension is loaded and then
+// run the callback function.
+function waitForExtension(extension, callback) {
+    const waitTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+        if (runWithExtension(extension, callback)) {
+            return GLib.SOURCE_REMOVE;
+        }
+
+        return GLib.SOURCE_CONTINUE;
+    });
+
+    return waitTimeoutId;
+}
+
+function runWithExtension(extension, callback) {
+    const loaded = Main.extensionManager.lookup(extension);
+    if (!loaded) {
+        return false;
+    }
+
+    callback(loaded);
+    return true;
 }

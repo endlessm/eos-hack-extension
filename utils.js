@@ -90,27 +90,27 @@ function loadInterfaceXML(iface) {
 }
 
 function override(object, methodName, callback) {
-    if (!object._fnOverrides)
-        object._fnOverrides = {};
+    if (!object._hackOverrides)
+        object._hackOverrides = {};
 
     const baseObject = object.prototype || object;
     const originalMethod = baseObject[methodName];
-    object._fnOverrides[methodName] = originalMethod;
+    object._hackOverrides[methodName] = originalMethod;
     baseObject[methodName] = callback;
 }
 
 function restore(object) {
     const baseObject = object.prototype || object;
-    if (object._fnOverrides) {
-        Object.keys(object._fnOverrides).forEach(k => {
-            baseObject[k] = object._fnOverrides[k];
+    if (object._hackOverrides) {
+        Object.keys(object._hackOverrides).forEach(k => {
+            baseObject[k] = object._hackOverrides[k];
         });
-        delete object._fnOverrides;
+        delete object._hackOverrides;
     }
 }
 
 function original(object, methodName) {
-    return object._fnOverrides[methodName];
+    return object._hackOverrides[methodName];
 }
 
 // We can't use WeakMap here because we need to iterate all items and it's not

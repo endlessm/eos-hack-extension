@@ -2085,8 +2085,7 @@ function disable() {
         },
         configurable: true,
     });
-    Utils.override(AppDisplay.AppIcon);
-
+    Utils.restore(AppDisplay.AppIcon);
     Utils.restore(Workspace.Workspace);
 
     Main.wm._codeViewManager.removeSessions();

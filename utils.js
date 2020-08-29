@@ -1,4 +1,4 @@
-/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp */
+/* exported getSettings, loadInterfaceXML, override, overrideProperty, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp */
 
 const {Gio, GLib, Shell} = imports.gi;
 const {config} = imports.misc;
@@ -99,6 +99,17 @@ function override(object, methodName, callback) {
     baseObject[methodName] = callback;
 }
 
+function overrideProperty(object, propertyName, descriptor) {
+    if (!object._hackPropOverrides)
+        object._hackPropOverrides = {};
+
+    const baseObject = object.prototype || object;
+    const originalProperty =
+        Object.getOwnPropertyDescriptor(baseObject, propertyName);
+    object._hackPropOverrides[propertyName] = originalProperty;
+    Object.defineProperty(baseObject, propertyName, descriptor);
+}
+
 function restore(object) {
     const baseObject = object.prototype || object;
     if (object._hackOverrides) {
@@ -106,6 +117,13 @@ function restore(object) {
             baseObject[k] = object._hackOverrides[k];
         });
         delete object._hackOverrides;
+    }
+    if (object._hackPropOverrides) {
+        Object.keys(object._hackPropOverrides).forEach(k => {
+            Object.defineProperty(baseObject, k,
+                object._hackPropOverrides[k]);
+        });
+        delete object._hackPropOverrides;
     }
 }
 

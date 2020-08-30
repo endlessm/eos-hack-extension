@@ -2037,8 +2037,8 @@ function enable() {
     // override alt-tab switchers
     Utils.override(AltTab, 'getWindows', getWindows);
     Utils.override(AltTab, '_createWindowClone', createWindowClone);
-    Utils.overrideProperty(AltTab.AppIcon, 'cachedWindows', {
-        get: function() {
+    Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
+        get() {
             const cached = this._cachedWindows || [];
             return cached.filter(win => !win._hackIsInactiveWindow);
         },
@@ -2076,7 +2076,15 @@ function disable() {
     Utils.restore(AltTab);
     Utils.restore(Main);
     Utils.restore(AltTab.AppSwitcherPopup);
-    Utils.restore(AltTab.AppIcon);
+    Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
+        get() {
+            return this._cachedWindows;
+        },
+        set(windowList) {
+            this._cachedWindows = windowList;
+        },
+        configurable: true,
+    });
     Utils.restore(AppDisplay.AppIcon);
     Utils.restore(Workspace.Workspace);
 

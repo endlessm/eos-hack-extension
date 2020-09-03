@@ -1223,6 +1223,8 @@ var MAP_WINDOW_HANDLER = null;
 var DESTROY_WINDOW_HANDLER = null;
 var SHOW_OVERVIEW_HANDLER = null;
 var HIDE_OVERVIEW_HANDLER = null;
+var ONBOARDING_HL_HANDLER = null;
+var ONBOARDING_PROXY = null;
 
 function _destroyNotifyClone() {
     if (NOTIFY_CLONE) {
@@ -1231,11 +1233,11 @@ function _destroyNotifyClone() {
     }
 }
 
-function mapNotifyWindow(win, actor) {
+function mapNotifyWindow(win, actor, forceClone = false) {
     if (!win || win.get_role() !== 'clubhouse-msg-notify')
         return;
 
-    if (!Main.overview.visible)
+    if (!Main.overview.visible && !forceClone)
         return;
 
     _destroyNotifyClone();
@@ -1319,6 +1321,32 @@ function enable() {
         if (actor && actor.metaWindow)
             destroyNotifyWindow(actor.metaWindow);
     });
+
+    // Check the onboarding extension to show the notification over the highlighting
+    ONBOARDING_PROXY = new Gio.DBusProxy.new_for_bus_sync(
+        Gio.BusType.SESSION,
+        0, null,
+        'com.endlessm.onboarding',
+        '/com/endlessm/onboarding',
+        'com.endlessm.onboarding',
+        null);
+    ONBOARDING_HL_HANDLER = ONBOARDING_PROXY.connect('g-properties-changed',
+        (proxy, changedProps) => {
+            const props = changedProps.deep_unpack();
+            if ('IsHighlight' in props) {
+                const isOnboardingHL = props['IsHighlight'].unpack();
+                const app = Utils.getClubhouseApp();
+                const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
+
+                if (!isOnboardingHL && !Main.overview.visible) {
+                    _destroyNotifyClone();
+                    return;
+                }
+
+                if (notify)
+                    mapNotifyWindow(notify, notify.get_compositor_private(), isOnboardingHL);
+            }
+        });
 }
 
 function disable() {
@@ -1326,6 +1354,7 @@ function disable() {
     Main.overview.disconnect(HIDE_OVERVIEW_HANDLER);
     global.window_manager.disconnect(MAP_WINDOW_HANDLER);
     global.window_manager.disconnect(DESTROY_WINDOW_HANDLER);
+    ONBOARDING_PROXY.disconnect(ONBOARDING_HL_HANDLER);
 
     if (CLUBHOUSE) {
         CLUBHOUSE.disable();

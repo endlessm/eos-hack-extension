@@ -302,7 +302,8 @@ function enable() {
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 
-    if (!Utils.desktopIs('endless'))
+    // TODO: integrate with eos-desktop@endlessm.com
+    if (!Utils.desktopIs('endless', '3.36'))
         return;
 
     Utils.override(ShellDBus.AppStoreService, 'AddApplication', function (id) {
@@ -340,7 +341,8 @@ function enable() {
 }
 
 function disable() {
-    if (Utils.desktopIs('endless'))
+    // TODO: integrate with eos-desktop@endlessm.com
+    if (!Utils.desktopIs('endless', '3.36'))
         Utils.restore(ShellDBus.AppStoreService);
 
     if (SHELL_DBUS_SERVICE) {

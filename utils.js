@@ -47,7 +47,6 @@ function tryMigrateSettings() {
 
     const oldSettings = getMigrationSettings();
     const boolSettings = [
-        'hack-mode-enabled',
         'hack-icon-pulse',
         'show-hack-launcher',
         'wobbly-effect',

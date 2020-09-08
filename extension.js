@@ -28,8 +28,7 @@ function enable() {
     tryMigrateSettings();
 
     // Only enable if we're in EOS
-    // TODO: integrate with eos-desktop@endlessm.com
-    if (desktopIs('endless', '3.36')) {
+    if (desktopIs('endless')) {
         // Hack desktop icon
         ui.appDisplay.enable();
     }
@@ -44,7 +43,7 @@ function enable() {
 }
 
 function disable() {
-    if (desktopIs('endless', '3.36'))
+    if (desktopIs('endless'))
         ui.appDisplay.disable();
 
     ui.clubhouse.disable();

@@ -843,24 +843,6 @@ class ClubhouseNotificationSource extends NotificationDaemon.GtkNotificationDaem
     }
 });
 
-// Enabling hack-mode for hack1 users
-function _migrateHack1() {
-    const hackComponents = Gio.File.new_for_uri('file:///var/lib/flatpak/app/com.endlessm.HackComponents');
-
-    if (!hackComponents.query_exists(null))
-        return;
-
-    // Only enable the first time, to allow the user to disable the hack mode
-    try {
-        const filePath = GLib.build_filenamev([GLib.get_user_config_dir(), '.hack1-migrated']);
-        Gio.File.new_for_path(filePath).create(Gio.FileCreateFlags.NONE, null);
-        global.settings.set_boolean('hack-mode-enabled', true);
-        log('Hack 1 migration: enabled hack mode and created indicator file');
-    } catch (e) {
-        log('Hack 1 migration: already done, skipping');
-    }
-}
-
 var Component = GObject.registerClass({
 }, class ClubhouseComponent extends GObject.Object {
     _init(clubhouseIface, clubhouseId, clubhousePath) {
@@ -868,19 +850,6 @@ var Component = GObject.registerClass({
         this._clubhouseIface = clubhouseIface || ClubhouseIface;
         this._clubhousePath = clubhousePath || CLUBHOUSE_DBUS_OBJ_PATH;
         this._proxyInfo = Gio.DBusInterfaceInfo.new_for_xml(this._clubhouseIface);
-
-        _migrateHack1();
-
-        Settings.connect('changed::hack-mode-enabled', () => {
-            let activated = Settings.get_boolean('hack-mode-enabled');
-            // Only enable if clubhouse app is installed
-            activated = activated && !!this.getClubhouseApp();
-
-            if (activated)
-                this.enable();
-            else
-                this.disable();
-        });
 
         this._enabled = false;
         this._hasForegroundQuest = false;
@@ -897,7 +866,7 @@ var Component = GObject.registerClass({
     }
 
     get _useClubhouse() {
-        return this._imageUsesClubhouse() && !!this.getClubhouseApp();
+        return !!this.getClubhouseApp();
     }
 
     getClubhouseApp() {
@@ -1038,10 +1007,6 @@ var Component = GObject.registerClass({
         this._itemBanner.dismiss(true);
         this._itemBanner = null;
         this._syncBanners();
-    }
-
-    _imageUsesClubhouse() {
-        return Settings.get_boolean('hack-mode-enabled');
     }
 
     _overrideAddNotification() {

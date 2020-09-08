@@ -532,8 +532,6 @@ var CodingSession = GObject.registerClass({
 
         this._initToolboxAppActionGroup();
 
-        this._hackModeChangedId = Settings.connect('changed::hack-mode-enabled',
-            this._syncButtonVisibility.bind(this));
         this._overviewHiddenId = Main.overview.connect('hidden',
             this._overviewStateChanged.bind(this));
         this._overviewShowingId = Main.overview.connect('showing',
@@ -998,10 +996,6 @@ var CodingSession = GObject.registerClass({
             global.display.disconnect(this._focusWindowId);
             this._focusWindowId = 0;
         }
-        if (this._hackModeChangedId !== 0) {
-            Settings.disconnect(this._hackModeChangedId);
-            this._hackModeChangedId = 0;
-        }
         if (this._overviewHiddenId) {
             Main.overview.disconnect(this._overviewHiddenId);
             this._overviewHiddenId = 0;
@@ -1223,11 +1217,6 @@ var CodingSession = GObject.registerClass({
 
         const {primaryMonitor} = Main.layoutManager;
         const inFullscreen = primaryMonitor && primaryMonitor.inFullscreen;
-
-        if (!Settings.get_boolean('hack-mode-enabled')) {
-            this._button.hide();
-            return;
-        }
 
         // Show only if either this window or the toolbox window
         // is in focus, visible and hackable
@@ -1483,22 +1472,6 @@ var CodeViewManager = GObject.registerClass({
             });
         });
 
-        Settings.connect('changed::hack-mode-enabled', () => {
-            const activated = Settings.get_boolean('hack-mode-enabled');
-            if (activated) {
-                // enable FtH for all windows!
-                global.get_window_actors().forEach(actor => {
-                    this.handleMapWindow(actor);
-                });
-
-                this._sessions.forEach(session => {
-                    session._syncButtonVisibility();
-                });
-            } else {
-                this.removeSessions();
-            }
-        });
-
         this._stopped = false;
 
         // enable FtH for all windows!
@@ -1613,7 +1586,7 @@ var CodeViewManager = GObject.registerClass({
         if (this._stopped)
             return false;
 
-        if (!Settings.get_boolean('hack-mode-enabled') || !this._isClubhouseInstalled())
+        if (!this._isClubhouseInstalled())
             return false;
 
         // Do not manage apps that don't have an associated .desktop file

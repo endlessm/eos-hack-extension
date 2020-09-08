@@ -6,11 +6,6 @@
       <summary>The old hack settings has been migrated</summary>
       <description>If true, the settings from org.gnome.shell has been copied to the new schema</description>
     </key>
-    <key type="b" name="hack-mode-enabled">
-      <default>true</default>
-      <summary>Enable Hack mode</summary>
-      <description>If true, enables the Hack experience</description>
-    </key>
     <key type="b" name="hack-icon-pulse">
       <default>false</default>
       <summary>Pulse Hack desktop icon</summary>

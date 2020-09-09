@@ -900,7 +900,12 @@ var CodingSession = GObject.registerClass({
                 this._syncButtonVisibility.bind(this));
 
         const windowTracker = Shell.WindowTracker.get_default();
-        this._toolboxApp = windowTracker.get_window_app(this.toolbox.meta_window);
+
+        this._toolboxApp = windowTracker.get_window_app(this.app.meta_window);
+        if (this._toolboxApp === Utils.getClubhouseApp()) {
+            const id = this.app.meta_window.get_gtk_application_id();
+            this._toolboxApp = Shell.AppSystem.get_default().lookup_app(`${id}.desktop`);
+        }
     }
 
     _cleanupToolboxWindow() {
@@ -957,7 +962,12 @@ var CodingSession = GObject.registerClass({
         }
 
         const windowTracker = Shell.WindowTracker.get_default();
+
         this._shellApp = windowTracker.get_window_app(this.app.meta_window);
+        if (this._shellApp === Utils.getClubhouseApp()) {
+            const id = this.app.meta_window.get_gtk_application_id();
+            this._shellApp = Shell.AppSystem.get_default().lookup_app(`${id}.desktop`);
+        }
 
         this._ensureButton();
     }
@@ -1611,6 +1621,7 @@ var CodeViewManager = GObject.registerClass({
 
         // Do not manage apps that don't have an associated .desktop file
         const windowTracker = Shell.WindowTracker.get_default();
+
         const shellApp = windowTracker.get_window_app(actor.meta_window);
         if (!shellApp)
             return false;
@@ -1750,6 +1761,7 @@ function getWindows(workspace) {
     // to their parent, their position in the MRU list may be more appropriate
     // than the parent; so start with the complete list ...
     const windows = global.display.get_tab_list(Meta.TabList.NORMAL_ALL, workspace);
+
     // ... map windows to their parent where appropriate ...
     return windows.map(w => {
         return w.is_attached_dialog() ? w.get_transient_for() : w;
@@ -1773,6 +1785,14 @@ function getWindowsForApp(app) {
     const appSession = sessions.find(s => s._shellApp === app);
     const toolboxSession = sessions.find(s => s._toolboxApp === app);
 
+    // FIXME: toolbox window is not attached to the new toy app!
+    if (app.get_id().startsWith('com.hack_computer.Clubhouse.')) {
+        global.app = app;
+        global.sessions = sessions;
+        global.appSession = appSession;
+        global.toolboxSession = toolboxSession;
+    }
+
     const wins = allWindows.filter(w => {
         if (toolboxSession && toolboxSession.toolbox.meta_window === w)
             return false;
@@ -1783,7 +1803,16 @@ function getWindowsForApp(app) {
         if (appSession && appSession.flipped && appSession.app.meta_window === w)
             return false;
 
-        return windowTracker.get_window_app(w) === app;
+        const windowApp = windowTracker.get_window_app(w);
+
+        // Detect toy apps like com.hack_computer.Clubhouse.Sidetrack
+        if (windowApp === Utils.getClubhouseApp()) {
+            const id = w.get_gtk_application_id();
+            const appId = app.get_id().slice(0, -8);
+            return id === appId;
+        }
+
+        return windowApp === app;
     });
     return wins;
 }
@@ -1799,6 +1828,32 @@ function activateWindow(window, time, workspaceNum) {
         win = session.toolbox.meta_window;
 
     activate(win, time, workspaceNum);
+}
+
+function switcherInit(...args) {
+    Utils.original(AltTab.AppSwitcher, '_init').bind(this)(...args);
+
+    let windowTracker = Shell.WindowTracker.get_default();
+    let settings = new Gio.Settings({ schema_id: 'org.gnome.shell.app-switcher' });
+
+    let workspace = null;
+    if (settings.get_boolean('current-workspace-only')) {
+        workspace = global.workspace_manager.get_active_workspace();
+    }
+    const allWindows = global.display.get_tab_list(Meta.TabList.NORMAL, workspace);
+
+    // Add toy apps to the list
+    allWindows
+        .map(w => w.get_gtk_application_id())
+        .filter(id => id.startsWith('com.hack_computer.Clubhouse.'))
+        .forEach(id => {
+            const app = Shell.AppSystem.get_default().lookup_app(`${id}.desktop`);
+            if (app) {
+                const appIcon = new AltTab.AppIcon(app);
+                appIcon.cachedWindows = allWindows.filter(w => w.get_gtk_application_id() === id);
+                this._addIcon(appIcon);
+            }
+        });
 }
 
 function switcherFinish(timestamp) {
@@ -2035,6 +2090,7 @@ function enable() {
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
     Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
+    Utils.override(AltTab.AppSwitcher, '_init', switcherInit);
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
@@ -2062,6 +2118,7 @@ function disable() {
     Utils.restore(AltTab);
     Utils.restore(Main);
     Utils.restore(AltTab.AppSwitcherPopup);
+    Utils.restore(AltTab.AppSwitcher);
     Object.defineProperty(AltTab.AppIcon.prototype, 'cachedWindows', {
         get() {
             return this._cachedWindows;

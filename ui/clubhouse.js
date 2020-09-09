@@ -31,6 +31,7 @@ const {Animation} = imports.ui.animation;
 const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
 const MessageList = imports.ui.messageList;
+const Layout = imports.ui.layout;
 const NotificationDaemon = imports.ui.notificationDaemon;
 
 const Util = imports.misc.util;
@@ -838,24 +839,6 @@ class ClubhouseNotificationSource extends NotificationDaemon.GtkNotificationDaem
     }
 });
 
-// Enabling hack-mode for hack1 users
-function _migrateHack1() {
-    const hackComponents = Gio.File.new_for_uri('file:///var/lib/flatpak/app/com.endlessm.HackComponents');
-
-    if (!hackComponents.query_exists(null))
-        return;
-
-    // Only enable the first time, to allow the user to disable the hack mode
-    try {
-        const filePath = GLib.build_filenamev([GLib.get_user_config_dir(), '.hack1-migrated']);
-        Gio.File.new_for_path(filePath).create(Gio.FileCreateFlags.NONE, null);
-        global.settings.set_boolean('hack-mode-enabled', true);
-        log('Hack 1 migration: enabled hack mode and created indicator file');
-    } catch (e) {
-        log('Hack 1 migration: already done, skipping');
-    }
-}
-
 var Component = GObject.registerClass({
 }, class ClubhouseComponent extends GObject.Object {
     _init(clubhouseIface, clubhouseId, clubhousePath) {
@@ -863,19 +846,6 @@ var Component = GObject.registerClass({
         this._clubhouseIface = clubhouseIface || ClubhouseIface;
         this._clubhousePath = clubhousePath || CLUBHOUSE_DBUS_OBJ_PATH;
         this._proxyInfo = Gio.DBusInterfaceInfo.new_for_xml(this._clubhouseIface);
-
-        _migrateHack1();
-
-        Settings.connect('changed::hack-mode-enabled', () => {
-            let activated = Settings.get_boolean('hack-mode-enabled');
-            // Only enable if clubhouse app is installed
-            activated = activated && !!this.getClubhouseApp();
-
-            if (activated)
-                this.enable();
-            else
-                this.disable();
-        });
 
         this._enabled = false;
         this._hasForegroundQuest = false;
@@ -892,7 +862,7 @@ var Component = GObject.registerClass({
     }
 
     get _useClubhouse() {
-        return this._imageUsesClubhouse() && !!this.getClubhouseApp();
+        return !!this.getClubhouseApp();
     }
 
     getClubhouseApp() {
@@ -1033,10 +1003,6 @@ var Component = GObject.registerClass({
         this._itemBanner.dismiss(true);
         this._itemBanner = null;
         this._syncBanners();
-    }
-
-    _imageUsesClubhouse() {
-        return Settings.get_boolean('hack-mode-enabled');
     }
 
     _overrideAddNotification() {
@@ -1213,6 +1179,83 @@ function activateActionFull(actionId, target, hideOverview) {
 }
 
 var CLUBHOUSE = null;
+var NOTIFY_CLONE = null;
+var MAP_WINDOW_HANDLER = null;
+var DESTROY_WINDOW_HANDLER = null;
+var SHOW_OVERVIEW_HANDLER = null;
+var HIDE_OVERVIEW_HANDLER = null;
+var ONBOARDING_HL_HANDLER = null;
+var ONBOARDING_PROXY = null;
+
+function _destroyNotifyClone() {
+    if (NOTIFY_CLONE) {
+        NOTIFY_CLONE.destroy();
+        NOTIFY_CLONE = null;
+    }
+}
+
+function mapNotifyWindow(win, actor, forceClone = false) {
+    if (!win || win.get_role() !== 'clubhouse-msg-notify')
+        return;
+
+    if (!Main.overview.visible && !forceClone)
+        return;
+
+    _destroyNotifyClone();
+
+    const cloneActor = new Clutter.Clone({
+        source: actor,
+        width: actor.width,
+        height: actor.height,
+        x: actor.x,
+        y: actor.y,
+        reactive: true,
+    });
+
+    cloneActor.connect('button-press-event', (actor, ev, data) => {
+        const [x, y] = ev.get_coords();
+        const actorX = x - cloneActor.x;
+        const actorY = y - cloneActor.y;
+        CLUBHOUSE.proxy.notificationEventRemote(actorX, actorY, (results, err) => {
+            if (err)
+                logError(err, 'Error sending click event to clubhouse');
+        });
+    });
+
+    const positionHandler = win.connect('position-changed', win => {
+        cloneActor.set_position(actor.x, actor.y);
+    });
+
+    const sizeHandler = win.connect('size-changed', win => {
+        const rect = win.get_frame_rect();
+        cloneActor.set_size(rect.width, rect.height);
+    });
+
+    cloneActor.connect('destroy', () => {
+        win.disconnect(positionHandler);
+        win.disconnect(sizeHandler);
+    });
+
+    Main.layoutManager.addChrome(cloneActor);
+
+    NOTIFY_CLONE = cloneActor;
+}
+
+function destroyNotifyWindow(win) {
+    if (!win || win.get_role() !== 'clubhouse-msg-notify')
+        return;
+    _destroyNotifyClone();
+}
+
+function showOverview() {
+    const app = Utils.getClubhouseApp();
+
+    _destroyNotifyClone();
+
+    const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
+    if (notify)
+        mapNotifyWindow(notify, notify.get_compositor_private());
+}
 
 function enable() {
     CLUBHOUSE = new Component();
@@ -1226,13 +1269,60 @@ function enable() {
 
     Utils.override(NotificationDaemon.GtkNotificationDaemonAppSource, 'activateActionFull', activateActionFull);
     Utils.override(NotificationDaemon.GtkNotificationDaemonAppSource, 'activateAction', activateAction);
+
+    SHOW_OVERVIEW_HANDLER = Main.overview.connect('showing', showOverview);
+    HIDE_OVERVIEW_HANDLER = Main.overview.connect('hidden', _destroyNotifyClone);
+
+    MAP_WINDOW_HANDLER = global.window_manager.connect('map', (wm, actor) => {
+        if (actor && actor.metaWindow)
+            mapNotifyWindow(actor.metaWindow, actor);
+    });
+
+    DESTROY_WINDOW_HANDLER = global.window_manager.connect('destroy', (wm, actor) => {
+        if (actor && actor.metaWindow)
+            destroyNotifyWindow(actor.metaWindow);
+    });
+
+    // Check the onboarding extension to show the notification over the highlighting
+    ONBOARDING_PROXY = new Gio.DBusProxy.new_for_bus_sync(
+        Gio.BusType.SESSION,
+        0, null,
+        'com.endlessm.onboarding',
+        '/com/endlessm/onboarding',
+        'com.endlessm.onboarding',
+        null);
+    ONBOARDING_HL_HANDLER = ONBOARDING_PROXY.connect('g-properties-changed',
+        (proxy, changedProps) => {
+            const props = changedProps.deep_unpack();
+            if ('IsHighlight' in props) {
+                const isOnboardingHL = props['IsHighlight'].unpack();
+                const app = Utils.getClubhouseApp();
+                const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
+
+                if (!isOnboardingHL && !Main.overview.visible) {
+                    _destroyNotifyClone();
+                    return;
+                }
+
+                if (notify)
+                    mapNotifyWindow(notify, notify.get_compositor_private(), isOnboardingHL);
+            }
+        });
 }
 
 function disable() {
+    Main.overview.disconnect(SHOW_OVERVIEW_HANDLER);
+    Main.overview.disconnect(HIDE_OVERVIEW_HANDLER);
+    global.window_manager.disconnect(MAP_WINDOW_HANDLER);
+    global.window_manager.disconnect(DESTROY_WINDOW_HANDLER);
+    ONBOARDING_PROXY.disconnect(ONBOARDING_HL_HANDLER);
+
     if (CLUBHOUSE) {
         CLUBHOUSE.disable();
         CLUBHOUSE = null;
     }
+
+    _destroyNotifyClone();
 
     Utils.restore(MessageList.URLHighlighter);
     Utils.restore(MessageList.Message);

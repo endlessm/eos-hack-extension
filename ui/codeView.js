@@ -552,8 +552,6 @@ var CodingSession = GObject.registerClass({
 
         this._initToolboxAppActionGroup();
 
-        this._hackModeChangedId = Settings.connect('changed::hack-mode-enabled',
-            this._syncButtonVisibility.bind(this));
         this._overviewHiddenId = Main.overview.connect('hidden',
             this._overviewStateChanged.bind(this));
         this._overviewShowingId = Main.overview.connect('showing',
@@ -892,7 +890,7 @@ var CodingSession = GObject.registerClass({
             this.toolbox.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
         // FIXME: Sync toolbox window
-        if (Utils.desktopIs('endless')) {
+        if (Utils.desktopIs('endless', '3.36')) {
             this._constrainGeometryIdToolbox =
                 this.toolbox.meta_window.connect('geometry-allocate',
                     this._constrainGeometry.bind(this));
@@ -939,7 +937,7 @@ var CodingSession = GObject.registerClass({
             this.app.meta_window.connect('size-changed',
                 this._synchronizeWindows.bind(this));
         // FIXME: Sync app window
-        if (Utils.desktopIs('endless')) {
+        if (Utils.desktopIs('endless', '3.36')) {
             this._constrainGeometryIdApp =
                 this.app.meta_window.connect('geometry-allocate',
                     this._constrainGeometry.bind(this));
@@ -1017,10 +1015,6 @@ var CodingSession = GObject.registerClass({
         if (this._focusWindowId !== 0) {
             global.display.disconnect(this._focusWindowId);
             this._focusWindowId = 0;
-        }
-        if (this._hackModeChangedId !== 0) {
-            Settings.disconnect(this._hackModeChangedId);
-            this._hackModeChangedId = 0;
         }
         if (this._overviewHiddenId) {
             Main.overview.disconnect(this._overviewHiddenId);
@@ -1243,11 +1237,6 @@ var CodingSession = GObject.registerClass({
 
         const {primaryMonitor} = Main.layoutManager;
         const inFullscreen = primaryMonitor && primaryMonitor.inFullscreen;
-
-        if (!Settings.get_boolean('hack-mode-enabled')) {
-            this._button.hide();
-            return;
-        }
 
         // Show only if either this window or the toolbox window
         // is in focus, visible and hackable
@@ -1503,22 +1492,6 @@ var CodeViewManager = GObject.registerClass({
             });
         });
 
-        Settings.connect('changed::hack-mode-enabled', () => {
-            const activated = Settings.get_boolean('hack-mode-enabled');
-            if (activated) {
-                // enable FtH for all windows!
-                global.get_window_actors().forEach(actor => {
-                    this.handleMapWindow(actor);
-                });
-
-                this._sessions.forEach(session => {
-                    session._syncButtonVisibility();
-                });
-            } else {
-                this.removeSessions();
-            }
-        });
-
         this._stopped = false;
 
         // enable FtH for all windows!
@@ -1633,7 +1606,7 @@ var CodeViewManager = GObject.registerClass({
         if (this._stopped)
             return false;
 
-        if (!Settings.get_boolean('hack-mode-enabled') || !this._isClubhouseInstalled())
+        if (!this._isClubhouseInstalled())
             return false;
 
         // Do not manage apps that don't have an associated .desktop file
@@ -1897,7 +1870,9 @@ function addButton(app) {
     if (proxy)
         return;
 
-    Utils.original(imports.ui.appIconBar.ScrolledIconList, '_addButton').bind(this)(app);
+    Utils.runWithExtension('eos-panel@endlessm.com', (panel) => {
+        Utils.original(panel.imports.ui.appIconBar.ScrolledIconList, '_addButton').bind(this)(app);
+    });
 }
 
 function focusWindowChanged() {
@@ -1909,18 +1884,19 @@ function focusWindowChanged() {
         // it could be the clubhouse
         const windowTracker = Shell.WindowTracker.get_default();
         const focusApp = windowTracker.focus_app;
-        if (focusApp.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse')
-            Main.panel.statusArea['appIcons']._setActiveApp(focusApp);
+        if (focusApp && focusApp.get_id().slice(0, -8) === 'com.hack_computer.Clubhouse')
+            Main.panel.statusArea['appIconBar']._setActiveApp(focusApp);
         return;
     }
 
     // If it's a toolbox the active app is the corresponding shellApp
     const activeApp = toolbox._shellApp;
-    Main.panel.statusArea['appIcons']._setActiveApp(activeApp);
+    Main.panel.statusArea['appIconBar']._setActiveApp(activeApp);
 }
 
 function getInterestingWindows() {
     let windows = this._app.get_windows();
+
     windows = windows.filter(metaWindow => {
         return !metaWindow.is_skip_taskbar() && !metaWindow._hackIsInactiveWindow;
     });
@@ -1943,7 +1919,7 @@ function getInterestingWindows() {
         });
     }
 
-    return [windows, false];
+    return windows;
 }
 
 function createWindowClone(window, size) {
@@ -2000,15 +1976,6 @@ function _windowGrabbed(display, screen, win, op) {
         return;
 
     const actor = win.get_compositor_private();
-    if (!actor._animatableSurface)
-        return;
-
-    // This is an event that may cause an animation
-    // on the window.
-    const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
-    if (attachedEffect)
-        attachedEffect.activate('move', {grabbed: true});
-
     this._codeViewManager.handleWindowGrab(actor, true);
 }
 
@@ -2019,20 +1986,15 @@ function _windowUngrabbed(display, op, win) {
         return;
 
     const actor = win.get_compositor_private();
-    if (!actor || !actor._animatableSurface)
+    if (!actor)
         return;
-
-    // This is an event that may cause an animation on the window
-    const attachedEffect = actor._animatableSurface.highest_priority_attached_effect_for_event('move');
-    if (attachedEffect)
-        attachedEffect.activate('move', {grabbed: false});
 
     this._codeViewManager.handleWindowGrab(actor, false);
 }
 
 function mapWindow(shellwm, actor) {
     actor._windowType = actor.meta_window.get_window_type();
-    if (Utils.desktopIs('endless') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
+    if (Utils.desktopIs('endless', '3.36') && imports.ui.sideComponent.isSideComponentWindow(actor.meta_window))
         return;
 
     if (actor._windowType === Meta.WindowType.NORMAL)
@@ -2044,6 +2006,7 @@ function destroyWindow(shellwm, actor) {
 }
 
 const WM_HANDLERS = [];
+var PANEL_WAITER = 0;
 var FOCUS_WINDOW = 0;
 var GRAB_BEGIN = 0;
 var GRAB_END = 0;
@@ -2077,10 +2040,12 @@ function enable() {
     Main.wm._codeViewManager = new CodeViewManager();
 
     if (Utils.desktopIs('endless')) {
-        Utils.override(imports.ui.appIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
-        Utils.override(imports.ui.appIconBar.ScrolledIconList, '_addButton', addButton);
-        // update the AppIconBar active app with app and toolbox linked
-        FOCUS_WINDOW = global.display.connect('notify::focus-window', focusWindowChanged);
+        PANEL_WAITER = Utils.waitForExtension('eos-panel@endlessm.com', (panel) => {
+            Utils.override(panel.imports.ui.appIconBar.AppIconButton, '_getInterestingWindows', getInterestingWindows);
+            Utils.override(panel.imports.ui.appIconBar.ScrolledIconList, '_addButton', addButton);
+            // update the AppIconBar active app with app and toolbox linked
+            FOCUS_WINDOW = global.display.connect('notify::focus-window', focusWindowChanged);
+        });
     }
 
     WobblyFx.enable();
@@ -2105,18 +2070,21 @@ function disable() {
         },
         configurable: true,
     });
-    Utils.override(AppDisplay.AppIcon);
-
+    Utils.restore(AppDisplay.AppIcon);
     Utils.restore(Workspace.Workspace);
 
     Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
 
     if (Utils.desktopIs('endless')) {
-        Utils.restore(imports.ui.appIconBar.AppIconButton);
-        Utils.restore(imports.ui.appIconBar.ScrolledIconList);
-        global.display.disconnect(FOCUS_WINDOW);
-        FOCUS_WINDOW = 0;
+        Utils.runWithExtension('eos-panel@endlessm.com', (panel) => {
+            Utils.restore(panel.imports.ui.appIconBar.AppIconButton);
+            Utils.restore(panel.imports.ui.appIconBar.ScrolledIconList);
+            global.display.disconnect(FOCUS_WINDOW);
+            FOCUS_WINDOW = 0;
+            GLib.source_remove(PANEL_WAITER);
+            PANEL_WAITER = 0;
+        });
     }
 
     WobblyFx.disable();

@@ -51,10 +51,6 @@ var Service = class {
 
         this._windowTrackId = Shell.WindowTracker.get_default().connect('notify::focus-app',
             this._checkFocusAppChanged.bind(this));
-        this._settingsHandlers.push(Settings.connect('changed::hack-mode-enabled', () => {
-            this._dbusImpl.emit_property_changed('HackModeEnabled',
-                new GLib.Variant('b', this.HackModeEnabled));
-        }));
         this._settingsHandlers.push(Settings.connect('changed::hack-icon-pulse', () => {
             this._dbusImpl.emit_property_changed('HackIconPulse',
                 new GLib.Variant('b', this.HackIconPulse));
@@ -122,14 +118,6 @@ var Service = class {
         if (tracker.focus_app)
             appId = tracker.focus_app.get_id();
         return appId;
-    }
-
-    get HackModeEnabled() {
-        return Settings.get_boolean('hack-mode-enabled');
-    }
-
-    set HackModeEnabled(enabled) {
-        Settings.set_boolean('hack-mode-enabled', enabled);
     }
 
     get HackIconPulse() {
@@ -322,7 +310,8 @@ function enable() {
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 
-    if (!Utils.desktopIs('endless'))
+    // TODO: integrate with eos-desktop@endlessm.com
+    if (!Utils.desktopIs('endless', '3.36'))
         return;
 
     Utils.override(ShellDBus.AppStoreService, 'AddApplication', function (id) {
@@ -360,7 +349,8 @@ function enable() {
 }
 
 function disable() {
-    if (Utils.desktopIs('endless'))
+    // TODO: integrate with eos-desktop@endlessm.com
+    if (!Utils.desktopIs('endless', '3.36'))
         Utils.restore(ShellDBus.AppStoreService);
 
     if (SHELL_DBUS_SERVICE) {

@@ -18,12 +18,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-/* exported getSettings, loadInterfaceXML, override, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp */
+/* exported getSettings, loadInterfaceXML, override, overrideProperty, restore, original, tryMigrateSettings, ObjectsMap, gettext, desktopIs, getClubhouseApp, waitForExtension, runWithExtension */
 
 const {Gio, GLib, Shell} = imports.gi;
 const {config} = imports.misc;
 const Gettext = imports.gettext.domain('hack-extension');
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
+const Main = imports.ui.main;
 
 var {gettext} = Gettext;
 
@@ -66,7 +67,6 @@ function tryMigrateSettings() {
 
     const oldSettings = getMigrationSettings();
     const boolSettings = [
-        'hack-mode-enabled',
         'hack-icon-pulse',
         'show-hack-launcher',
         'wobbly-effect',
@@ -110,27 +110,45 @@ function loadInterfaceXML(iface) {
 }
 
 function override(object, methodName, callback) {
-    if (!object._fnOverrides)
-        object._fnOverrides = {};
+    if (!object._hackOverrides)
+        object._hackOverrides = {};
 
     const baseObject = object.prototype || object;
     const originalMethod = baseObject[methodName];
-    object._fnOverrides[methodName] = originalMethod;
+    object._hackOverrides[methodName] = originalMethod;
     baseObject[methodName] = callback;
+}
+
+function overrideProperty(object, propertyName, descriptor) {
+    if (!object._hackPropOverrides)
+        object._hackPropOverrides = {};
+
+    const baseObject = object.prototype || object;
+    const originalProperty =
+        Object.getOwnPropertyDescriptor(baseObject, propertyName);
+    object._hackPropOverrides[propertyName] = originalProperty;
+    Object.defineProperty(baseObject, propertyName, descriptor);
 }
 
 function restore(object) {
     const baseObject = object.prototype || object;
-    if (object._fnOverrides) {
-        Object.keys(object._fnOverrides).forEach(k => {
-            baseObject[k] = object._fnOverrides[k];
+    if (object._hackOverrides) {
+        Object.keys(object._hackOverrides).forEach(k => {
+            baseObject[k] = object._hackOverrides[k];
         });
-        delete object._fnOverrides;
+        delete object._hackOverrides;
+    }
+    if (object._hackPropOverrides) {
+        Object.keys(object._hackPropOverrides).forEach(k => {
+            Object.defineProperty(baseObject, k,
+                object._hackPropOverrides[k]);
+        });
+        delete object._hackPropOverrides;
     }
 }
 
 function original(object, methodName) {
-    return object._fnOverrides[methodName];
+    return object._hackOverrides[methodName];
 }
 
 // We can't use WeakMap here because we need to iterate all items and it's not
@@ -198,7 +216,7 @@ const _currentDesktopsMatches = {};
 //
 // This function is a copy of:
 // https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
-function desktopIs(name, maxVersion = '3.36') {
+function desktopIs(name, maxVersion = '3.38') {
     if (config.PACKAGE_VERSION > maxVersion)
         return false;
 
@@ -218,4 +236,28 @@ function desktopIs(name, maxVersion = '3.36') {
 
 function getClubhouseApp(clubhouseId = 'com.hack_computer.Clubhouse') {
     return Shell.AppSystem.get_default().lookup_app(`${clubhouseId}.desktop`);
+}
+
+// This function will query if the extension is loaded and then
+// run the callback function.
+function waitForExtension(extension, callback) {
+    const waitTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+        if (runWithExtension(extension, callback)) {
+            return GLib.SOURCE_REMOVE;
+        }
+
+        return GLib.SOURCE_CONTINUE;
+    });
+
+    return waitTimeoutId;
+}
+
+function runWithExtension(extension, callback) {
+    const loaded = Main.extensionManager.lookup(extension);
+    if (!loaded) {
+        return false;
+    }
+
+    callback(loaded);
+    return true;
 }

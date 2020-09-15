@@ -47,11 +47,6 @@ const Service = Hack.imports.service;
 function enable() {
     tryMigrateSettings();
 
-    // Only enable if we're in EOS
-    if (desktopIs('endless')) {
-        // Hack desktop icon
-        ui.appDisplay.enable();
-    }
     // Hack clubhouse desktop notifications
     ui.clubhouse.enable();
 
@@ -63,9 +58,6 @@ function enable() {
 }
 
 function disable() {
-    if (desktopIs('endless'))
-        ui.appDisplay.disable();
-
     ui.clubhouse.disable();
     ui.codeView.disable();
 

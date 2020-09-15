@@ -38,6 +38,9 @@ const WobblyFx = Hack.imports.ui.wobblyFx;
 const Service = Hack.imports.service;
 const SoundServer = Hack.imports.misc.soundServer;
 
+const {desktopIs} = Hack.imports.utils;
+const {createInfoPopup} = Hack.imports.ui.appDisplay;
+
 const WINDOW_ANIMATION_TIME = 250;
 
 
@@ -1815,6 +1818,11 @@ function switcherFinish(timestamp) {
 
 function proxyApp(...args) {
     Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
+
+    if (desktopIs('endless'))
+        createInfoPopup.bind(this)();
+
+
     const originalApp = this.app;
     this._originalApp = originalApp;
     const id = this.app.get_id().slice(0, -8);

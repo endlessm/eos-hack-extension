@@ -887,9 +887,12 @@ var Component = GObject.registerClass({
         }
     }
 
-    _ensureProxy() {
+    async _ensureProxy() {
         if (this.proxy)
             return this.proxy;
+
+        if (!this._cancellable)
+            this._cancellable = new Gio.Cancellable();
 
         const clubhouseInstalled = !!this.getClubhouseApp();
         if (clubhouseInstalled) {
@@ -902,7 +905,8 @@ var Component = GObject.registerClass({
                     g_object_path: this._clubhousePath,
                     g_flags: Gio.DBusProxyFlags.NONE,
                 });
-                this.proxy.init(null);
+                await this.proxy.init_async(
+                    GLib.PRIORITY_DEFAULT, this._cancellable);
                 return this.proxy;
             } catch (e) {
                 logError(e, `Error while constructing the DBus proxy for ${this._proxyName}`);
@@ -945,6 +949,11 @@ var Component = GObject.registerClass({
     }
 
     disable() {
+        if (this._cancellable) {
+            this._cancellable.cancel();
+            this._cancellable = null;
+        }
+
         this._enabled = false;
         this._syncVisibility();
     }

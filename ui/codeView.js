@@ -1865,6 +1865,9 @@ function proxyApp(...args) {
 
 function addButton(app) {
     const [win] = app.get_windows();
+    if (!win)
+        return;
+
     const proxy = _getHackToolboxProxy(win);
     // This is a toolbox! we don't want to show toolboxes in the icon bar
     if (proxy)

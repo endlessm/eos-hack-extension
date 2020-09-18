@@ -18,57 +18,104 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-/* exported enable, disable */
-/* global global */
+/* exported createInfoPopup */
 
-const AppDisplay = imports.ui.appDisplay;
+const {Clutter, Graphene, Gio, GLib, GObject, Pango, St} = imports.gi;
+
+const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
+const AppDisplay = imports.ui.appDisplay;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 const Utils = Hack.imports.utils;
+const _ = Hack.imports.utils.gettext;
 
-var CLUBHOUSE = 'com.hack_computer.Clubhouse.desktop';
+const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
-function enable() {
-    Utils.override(AppDisplay.PageManager, '_loadPages', function() {
-        const layout = global.settings.get_value('app-picker-layout');
-        const pages = layout.recursiveUnpack();
+var HackPopupMenuItem = GObject.registerClass(
+class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
+    _init(params) {
+        super._init(params);
+        this.style_class = 'hack-popup-menu-item';
 
-        // Add hack icon to the first page
-        const desktop = pages[0];
+        /* Translators: The 'Endless Hack' is not translatable, it's the brand name */
+        const title = _('Endless Hack: Unlock infinite possibilities through coding');
+        /* Translators: The 'Hack' is not translatable, it's the brand name */
+        const description = _('Hack is a new learning platform from Endless, focused on teaching the foundations of programming and creative problem-solving to kids, ages 10 and up. With 5 different pathways, Hack has a variety of activities that teach a wide range of skills and concepts - check it out!');
+        const image = `file://${Hack.path}/data/icons/hack-tooltip.png`;
+        const iconFile = Gio.File.new_for_uri(image);
+        const gicon = new Gio.FileIcon({file: iconFile});
 
-        // Reposition clubhouse if it's on desktop
-        if (CLUBHOUSE in desktop) {
-            const clubhouse = desktop[CLUBHOUSE];
+        this.icon = new St.Icon({
+            gicon,
+            icon_size: 180,
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
+            style_class: 'hack-tooltip-icon',
+            x_align: Clutter.ActorAlign.CENTER,
+        });
 
-            if (clubhouse.position !== 0) {
-                const pos = clubhouse.position;
-                Object.keys(desktop).forEach(k => {
-                    const kpos = desktop[k].position;
-                    if (k === CLUBHOUSE) {
-                        desktop[k].position = 0;
-                    } else if (kpos < pos) {
-                        desktop[k].position = kpos + 1;
-                    }
+        this.title = new St.Label({
+            style_class: 'hack-tooltip-title',
+            text: title,
+            x_expand: true,
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+
+        this.desc = new St.Label({
+            style_class: 'hack-tooltip-desc',
+            text: description,
+            x_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        this.desc.clutter_text.set_line_wrap(true);
+        this.desc.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this.desc.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+
+        this.rightBox = new St.BoxLayout({
+            style_class: 'hack-popup-menu-item-right',
+            vertical: true,
+        });
+        this.rightBox.add_child(this.title);
+        this.rightBox.add_child(this.desc);
+
+        this.add_child(this.icon);
+        this.add_child(this.rightBox);
+    }
+});
+
+function createInfoPopup() {
+    if (this._id !== CLUBHOUSE_ID) {
+        return;
+    }
+
+    this._infoPopupId = null;
+    this._infoPopup = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP, 0);
+    this._infoPopup.box.add_style_class_name('hack-tooltip');
+    this._infoPopup.actor.add_style_class_name('hack-tooltip-arrow');
+    this._infoMenuItem = new HackPopupMenuItem();
+    this._infoPopup.addMenuItem(this._infoMenuItem);
+
+    this._infoPopup.actor.hide();
+    Main.uiGroup.add_actor(this._infoPopup.actor);
+
+    this.track_hover = true;
+    this.connect('notify::hover', () => {
+        if (this.hover) {
+            this._infoPopupId = GLib.timeout_add(
+                GLib.PRIORITY_DEFAULT,
+                300, () => {
+                    this._infoPopupId = null;
+                    this._infoPopup.open();
                 });
-            }
         } else {
-            // Add the clubhouse app
-            Object.keys(desktop).forEach(k => {
-                desktop[k].position = desktop[k].position + 1;
-            });
-            desktop[CLUBHOUSE] = { position: 0 };
+            if (this._infoPopupId) {
+                GLib.source_remove(this._infoPopupId);
+                this._infoPopupId = null;
+            }
+            this._infoPopup.close();
         }
-
-        this._pages = pages;
-        if (!this._updatingPages)
-            this.emit('layout-changed');
     });
-
-    Main.overview.viewSelector.appDisplay._pageManager._loadPages();
-}
-
-function disable() {
-    Utils.restore(AppDisplay.PageManager);
 }

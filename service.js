@@ -350,7 +350,7 @@ function enable() {
 
 function disable() {
     // TODO: integrate with eos-desktop@endlessm.com
-    if (!Utils.desktopIs('endless', '3.36'))
+    if (Utils.desktopIs('endless', '3.36'))
         Utils.restore(ShellDBus.AppStoreService);
 
     if (SHELL_DBUS_SERVICE) {

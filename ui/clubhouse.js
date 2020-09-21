@@ -1195,6 +1195,7 @@ var SHOW_OVERVIEW_HANDLER = null;
 var HIDE_OVERVIEW_HANDLER = null;
 var ONBOARDING_HL_HANDLER = null;
 var ONBOARDING_PROXY = null;
+var ONBOARDING_CANCELLABLE = null;
 
 function _destroyNotifyClone() {
     if (NOTIFY_CLONE) {
@@ -1266,6 +1267,45 @@ function showOverview() {
         mapNotifyWindow(notify, notify.get_compositor_private());
 }
 
+function onOnboardingHLChanged(isOnboardingHL) {
+    const app = Utils.getClubhouseApp();
+    const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
+
+    if (!isOnboardingHL && !Main.overview.visible) {
+        _destroyNotifyClone();
+        return;
+    }
+
+    if (notify)
+        mapNotifyWindow(notify, notify.get_compositor_private(), isOnboardingHL);
+}
+
+async function connectOnboarding(cancellable) {
+    try {
+        ONBOARDING_PROXY = await Gio.DBusProxy.new(
+            Gio.DBus.session,
+            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
+            null,
+            'com.endlessm.onboarding',
+            '/com/endlessm/onboarding',
+            'com.endlessm.onboarding',
+            cancellable);
+    } catch (e) {
+        if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+            log('error creating onboarding proxy: %s'.format(e.message));
+        return;
+    }
+
+    ONBOARDING_HL_HANDLER = ONBOARDING_PROXY.connect('g-properties-changed',
+        (_proxy, changedProps) => {
+            const props = changedProps.deep_unpack();
+            if ('IsHighlight' in props) {
+                const isOnboardingHL = props['IsHighlight'].unpack();
+                onOnboardingHLChanged(isOnboardingHL);
+            }
+        });
+}
+
 function enable() {
     CLUBHOUSE = new Component();
 
@@ -1293,30 +1333,8 @@ function enable() {
     });
 
     // Check the onboarding extension to show the notification over the highlighting
-    ONBOARDING_PROXY = new Gio.DBusProxy.new_for_bus_sync(
-        Gio.BusType.SESSION,
-        0, null,
-        'com.endlessm.onboarding',
-        '/com/endlessm/onboarding',
-        'com.endlessm.onboarding',
-        null);
-    ONBOARDING_HL_HANDLER = ONBOARDING_PROXY.connect('g-properties-changed',
-        (proxy, changedProps) => {
-            const props = changedProps.deep_unpack();
-            if ('IsHighlight' in props) {
-                const isOnboardingHL = props['IsHighlight'].unpack();
-                const app = Utils.getClubhouseApp();
-                const notify = app.get_windows().find(w => w.get_role() === 'clubhouse-msg-notify');
-
-                if (!isOnboardingHL && !Main.overview.visible) {
-                    _destroyNotifyClone();
-                    return;
-                }
-
-                if (notify)
-                    mapNotifyWindow(notify, notify.get_compositor_private(), isOnboardingHL);
-            }
-        });
+    ONBOARDING_CANCELLABLE = new Gio.Cancellable();
+    connectOnboarding(ONBOARDING_CANCELLABLE);
 }
 
 function disable() {
@@ -1324,7 +1342,12 @@ function disable() {
     Main.overview.disconnect(HIDE_OVERVIEW_HANDLER);
     global.window_manager.disconnect(MAP_WINDOW_HANDLER);
     global.window_manager.disconnect(DESTROY_WINDOW_HANDLER);
-    ONBOARDING_PROXY.disconnect(ONBOARDING_HL_HANDLER);
+    if (ONBOARDING_HL_HANDLER)
+        ONBOARDING_PROXY.disconnect(ONBOARDING_HL_HANDLER);
+    if (ONBOARDING_CANCELLABLE) {
+        ONBOARDING_CANCELLABLE.cancel();
+        ONBOARDING_CANCELLABLE = null;
+    }
 
     if (CLUBHOUSE) {
         CLUBHOUSE.disable();

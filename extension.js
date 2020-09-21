@@ -47,14 +47,14 @@ const Service = Hack.imports.service;
 function enable() {
     tryMigrateSettings();
 
-    // Hack clubhouse desktop notifications
-    ui.clubhouse.enable();
-
     // Flip to hack
     ui.codeView.enable();
 
     // DBus API
     Service.enable();
+
+    // Hack clubhouse desktop notifications
+    ui.clubhouse.enable();
 }
 
 function disable() {

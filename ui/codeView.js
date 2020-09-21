@@ -39,9 +39,10 @@ const Service = Hack.imports.service;
 const SoundServer = Hack.imports.misc.soundServer;
 
 const {desktopIs} = Hack.imports.utils;
-const {createInfoPopup} = Hack.imports.ui.appDisplay;
+const {createInfoPopup, destroyInfoPopup} = Hack.imports.ui.appDisplay;
 
 const WINDOW_ANIMATION_TIME = 250;
+const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 
 var CodingSessionStateEnum = {
@@ -1816,11 +1817,20 @@ function switcherFinish(timestamp) {
     SwitcherPopup.SwitcherPopup.prototype._finish.bind(this)(timestamp);
 }
 
+function getClubhouseAppIcon() {
+    const items = Main.overview.viewSelector.appDisplay.getAllItems();
+    const clubhouse = items.find(i => i._id === CLUBHOUSE_ID);
+    return clubhouse;
+}
+
+var CLUBHOUSE_TOOLTIP_HANDLER = 0;
 function proxyApp(...args) {
     Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
 
-    if (desktopIs('endless'))
-        createInfoPopup.bind(this)();
+    if (desktopIs('endless')) {
+        if (this._id === CLUBHOUSE_ID)
+            CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(this)();
+    }
 
 
     const originalApp = this.app;
@@ -1850,13 +1860,15 @@ function proxyApp(...args) {
                     };
                 }
 
-                // Activate the toolbox window if the app is a coding session and it's flipped
-                const sessions = Main.wm._codeViewManager.sessions;
-                const appSession = sessions.find(s => s._shellApp === originalApp);
-                if (appSession && appSession.flipped) {
-                    return () => {
-                        appSession.toolbox.meta_window.activate(global.get_current_time());
-                    };
+                if (Main.wm._codeViewManager) {
+                    // Activate the toolbox window if the app is a coding session and it's flipped
+                    const sessions = Main.wm._codeViewManager.sessions;
+                    const appSession = sessions.find(s => s._shellApp === originalApp);
+                    if (appSession && appSession.flipped) {
+                        return () => {
+                            appSession.toolbox.meta_window.activate(global.get_current_time());
+                        };
+                    }
                 }
             }
 
@@ -2046,6 +2058,11 @@ function enable() {
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
     Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
 
+    const clubhouse = getClubhouseAppIcon();
+    if (clubhouse && !CLUBHOUSE_TOOLTIP_HANDLER) {
+        CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(clubhouse)();
+    }
+
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
     Main.wm._codeViewManager = new CodeViewManager();
@@ -2096,6 +2113,14 @@ function disable() {
             GLib.source_remove(PANEL_WAITER);
             PANEL_WAITER = 0;
         });
+
+        if (CLUBHOUSE_TOOLTIP_HANDLER) {
+            const clubhouse = getClubhouseAppIcon();
+            if (clubhouse) {
+                destroyInfoPopup.bind(clubhouse)(CLUBHOUSE_TOOLTIP_HANDLER);
+                CLUBHOUSE_TOOLTIP_HANDLER = 0;
+            }
+        }
     }
 
     WobblyFx.disable();

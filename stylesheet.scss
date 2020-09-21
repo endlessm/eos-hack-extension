@@ -204,8 +204,8 @@ $clubhouse_action_buttons_color_active: #44D7B6;
 }
 
 .hack-tooltip-arrow {
-  -arrow-background-color: white;
-  -arrow-border-color: transparent;
+  -arrow-background-color: white !important;
+  -arrow-border-color: transparent !important;
 }
 
 .hack-tooltip {

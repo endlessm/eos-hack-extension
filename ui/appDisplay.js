@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-/* exported createInfoPopup */
+/* exported createInfoPopup, destroyInfoPopup */
 
 const {Clutter, Graphene, Gio, GLib, GObject, Pango, St} = imports.gi;
 
@@ -30,8 +30,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 const Utils = Hack.imports.utils;
 const _ = Hack.imports.utils.gettext;
-
-const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 var HackPopupMenuItem = GObject.registerClass(
 class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
@@ -87,10 +85,6 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
 });
 
 function createInfoPopup() {
-    if (this._id !== CLUBHOUSE_ID) {
-        return;
-    }
-
     this._infoPopupId = null;
     this._infoPopup = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP, 0);
     this._infoPopup.box.add_style_class_name('hack-tooltip');
@@ -101,21 +95,41 @@ function createInfoPopup() {
     this._infoPopup.actor.hide();
     Main.uiGroup.add_actor(this._infoPopup.actor);
 
+    this._infoPopup.connect('destroy', () => {
+        if (this._infoPopupId) {
+            GLib.source_remove(this._infoPopupId);
+            this._infoPopupId = null;
+        }
+    });
+
     this.track_hover = true;
-    this.connect('notify::hover', () => {
+    return this.connect('notify::hover', () => {
         if (this.hover) {
+            if (this._infoPopupId)
+                GLib.source_remove(this._infoPopupId);
+
             this._infoPopupId = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 300, () => {
                     this._infoPopupId = null;
-                    this._infoPopup.open();
+                    if (this._infoPopup)
+                        this._infoPopup.open();
                 });
         } else {
             if (this._infoPopupId) {
                 GLib.source_remove(this._infoPopupId);
                 this._infoPopupId = null;
             }
-            this._infoPopup.close();
+            if (this._infoPopup)
+                this._infoPopup.close();
         }
     });
+}
+
+function destroyInfoPopup(handler) {
+    this._infoPopup.destroy();
+    this._infoPopupId = null;
+    this._infoPopup = null;
+    this._infoMenuItem = null;
+    this.disconnect(handler);
 }

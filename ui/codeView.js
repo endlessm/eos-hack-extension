@@ -2058,9 +2058,11 @@ function enable() {
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
     Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
 
-    const clubhouse = getClubhouseAppIcon();
-    if (clubhouse && !CLUBHOUSE_TOOLTIP_HANDLER) {
-        CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(clubhouse)();
+    if (Utils.desktopIs('endless')) {
+        const clubhouse = getClubhouseAppIcon();
+        if (clubhouse && !CLUBHOUSE_TOOLTIP_HANDLER) {
+            CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(clubhouse)();
+        }
     }
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);

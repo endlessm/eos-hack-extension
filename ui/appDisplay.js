@@ -25,6 +25,7 @@ const {Clutter, Graphene, Gio, GLib, GObject, Pango, St} = imports.gi;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const AppDisplay = imports.ui.appDisplay;
+const {ViewPage} = imports.ui.viewSelector;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -105,6 +106,11 @@ function createInfoPopup() {
     this.track_hover = true;
     return this.connect('notify::hover', () => {
         if (this.hover) {
+            const inApps = Main.overview.viewSelector.getActivePage() === ViewPage.APPS;
+            if (!inApps) {
+                return;
+            }
+
             if (this._infoPopupId)
                 GLib.source_remove(this._infoPopupId);
 

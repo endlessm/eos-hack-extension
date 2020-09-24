@@ -35,7 +35,7 @@ const _ = Hack.imports.utils.gettext;
 var HackPopupMenuItem = GObject.registerClass(
 class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
     _init(params) {
-        super._init(params);
+        super._init({ ...params, activate: false });
         this.style_class = 'hack-popup-menu-item';
 
         /* Translators: The 'Endless Hack' is not translatable, it's the brand name */
@@ -85,57 +85,84 @@ class HackPopupMenuItem extends PopupMenu.PopupBaseMenuItem {
     }
 });
 
-function createInfoPopup() {
-    this._infoPopupId = null;
-    this._infoPopup = new PopupMenu.PopupMenu(this, 0.5, St.Side.TOP, 0);
-    this._infoPopup.box.add_style_class_name('hack-tooltip');
-    this._infoPopup.actor.add_style_class_name('hack-tooltip-arrow');
-    this._infoMenuItem = new HackPopupMenuItem();
-    this._infoPopup.addMenuItem(this._infoMenuItem);
+var HackPopupMenu = class extends PopupMenu.PopupMenu {
+    constructor(...params) {
+        super(...params);
+        this.box.add_style_class_name('hack-tooltip');
+        this.actor.add_style_class_name('hack-tooltip-arrow');
+    }
 
-    this._infoPopup.actor.hide();
-    Main.uiGroup.add_actor(this._infoPopup.actor);
+    _onKeyPress(actor, event) {
+        // Don't show this popup menu on key press
+        return Clutter.EVENT_PROPAGATE;
+    }
+}
 
-    this._infoPopup.connect('destroy', () => {
-        if (this._infoPopupId) {
-            GLib.source_remove(this._infoPopupId);
-            this._infoPopupId = null;
+function createInfoPopup(appIcon) {
+    if (appIcon._infoPopup) {
+        return;
+    }
+
+    appIcon._infoPopupId = null;
+    appIcon._infoPopup = new HackPopupMenu(appIcon, 0.5, St.Side.TOP, 0);
+    appIcon._infoMenuItem = new HackPopupMenuItem();
+    appIcon._infoPopup.addMenuItem(appIcon._infoMenuItem);
+
+    appIcon._infoPopup.actor.hide();
+    Main.uiGroup.add_actor(appIcon._infoPopup.actor);
+
+    appIcon._infoPopup.connect('destroy', () => {
+        if (appIcon._infoPopupId) {
+            GLib.source_remove(appIcon._infoPopupId);
+            appIcon._infoPopupId = null;
         }
     });
 
-    this.track_hover = true;
-    return this.connect('notify::hover', () => {
-        if (this.hover) {
+    appIcon.connect('destroy', () => destroyInfoPopup(appIcon));
+
+    appIcon.track_hover = true;
+    appIcon._tooltipHandler = appIcon.connect('notify::hover', () => {
+        if (appIcon.hover) {
             const inApps = Main.overview.viewSelector.getActivePage() === ViewPage.APPS;
             if (!inApps) {
                 return;
             }
 
-            if (this._infoPopupId)
-                GLib.source_remove(this._infoPopupId);
+            if (appIcon._infoPopupId)
+                GLib.source_remove(appIcon._infoPopupId);
 
-            this._infoPopupId = GLib.timeout_add(
+            appIcon._infoPopupId = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 300, () => {
-                    this._infoPopupId = null;
-                    if (this._infoPopup)
-                        this._infoPopup.open();
+                    appIcon._infoPopupId = null;
+                    if (appIcon._infoPopup)
+                        appIcon._infoPopup.open();
                 });
         } else {
-            if (this._infoPopupId) {
-                GLib.source_remove(this._infoPopupId);
-                this._infoPopupId = null;
+            if (appIcon._infoPopupId) {
+                GLib.source_remove(appIcon._infoPopupId);
+                appIcon._infoPopupId = null;
             }
-            if (this._infoPopup)
-                this._infoPopup.close();
+            if (appIcon._infoPopup)
+                appIcon._infoPopup.close();
         }
     });
 }
 
-function destroyInfoPopup(handler) {
-    this._infoPopup.destroy();
-    this._infoPopupId = null;
-    this._infoPopup = null;
-    this._infoMenuItem = null;
-    this.disconnect(handler);
+function destroyInfoPopup(appIcon) {
+    if (!appIcon._infoPopup)
+        return;
+
+    if (appIcon._infoPopupId) {
+        GLib.source_remove(appIcon._infoPopupId);
+        appIcon._infoPopupId = null;
+    }
+
+    appIcon._infoPopup.destroy();
+    appIcon._infoPopup = null;
+    appIcon._infoMenuItem = null;
+    if (appIcon._tooltipHandler) {
+        appIcon.disconnect(appIcon._tooltipHandler);
+    }
+    appIcon._tooltipHandler = null;
 }

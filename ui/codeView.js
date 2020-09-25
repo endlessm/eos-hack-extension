@@ -1314,6 +1314,7 @@ var CodingSession = GObject.registerClass({
 
         if (focusedActor === this.toolbox) {
             this.app.meta_window.raise();
+            this.toolbox.meta_window.raise();
             this._toolboxApp.activate_window(this.toolbox.meta_window, global.get_current_time());
         } else {
             // Ensure correct stacking order by activating the window that just got focus.

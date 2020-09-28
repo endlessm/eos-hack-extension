@@ -2071,6 +2071,7 @@ function enable() {
             // Setting always the custom list of windows to hack toolbox and app linked
             this._cachedWindows = getWindowsForApp(this.app);
         },
+        configurable: true,
     });
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
@@ -2107,6 +2108,7 @@ function disable() {
         set: function(windowList) {
             this._cachedWindows = windowList;
         },
+        configurable: true,
     });
     Utils.restore(AppDisplay.AppIcon);
 

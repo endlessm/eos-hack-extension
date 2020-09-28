@@ -888,13 +888,17 @@ var Component = GObject.registerClass({
         }
     }
 
-    _ensureProxy() {
-        if (this.proxy)
-            return this.proxy;
+    async _ensureProxy() {
+        return new Promise((resolve, reject) => {
+            if (this.proxy)
+                resolve(this.proxy);
 
-        const clubhouseInstalled = !!this.getClubhouseApp();
-        if (clubhouseInstalled) {
-            try {
+            if (!this._cancellable)
+                this._cancellable = new Gio.Cancellable();
+
+
+            const clubhouseInstalled = !!this.getClubhouseApp();
+            if (clubhouseInstalled) {
                 this.proxy = new Gio.DBusProxy({
                     g_connection: Gio.DBus.session,
                     g_interface_name: this._proxyInfo.name,
@@ -903,24 +907,30 @@ var Component = GObject.registerClass({
                     g_object_path: this._clubhousePath,
                     g_flags: Gio.DBusProxyFlags.NONE,
                 });
-                this.proxy.init(null);
-                return this.proxy;
-            } catch (e) {
-                logError(e, `Error while constructing the DBus proxy for ${this._proxyName}`);
+
+                this.proxy.init_async(GLib.PRIORITY_DEFAULT, this._cancellable, (initable, result) => {
+                    try {
+                        initable.init_finish(result);
+                        resolve(this.proxy);
+                    } catch (e) {
+                        logError(e, `Error while constructing the DBus proxy for ${this._proxyName}`);
+                        reject();
+                    }
+                });
+            } else {
+                log('Cannot construct Clubhouse proxy because Clubhouse app was not found.');
+                reject();
             }
-        } else {
-            log('Cannot construct Clubhouse proxy because Clubhouse app was not found.');
-        }
-        return null;
+        });
     }
 
-    enable() {
+    async enable() {
         if (!this._useClubhouse) {
             log('Cannot enable Clubhouse in this image version');
             return;
         }
 
-        this._ensureProxy();
+        await this._ensureProxy();
         this._migrationQuest();
 
         if (this._clubhouseProxyHandler === 0) {
@@ -946,12 +956,18 @@ var Component = GObject.registerClass({
     }
 
     disable() {
+        if (this._cancellable) {
+            this._cancellable.cancel();
+            this._cancellable = null;
+        }
+
         this._enabled = false;
         this._syncVisibility();
     }
 
-    callShow(timestamp) {
-        if (this._ensureProxy() && this.proxy.g_name_owner) {
+    async callShow(timestamp) {
+        const proxy = await this._ensureProxy();
+        if (proxy && this.proxy.g_name_owner) {
             this.proxy.showRemote(timestamp);
             return;
         }

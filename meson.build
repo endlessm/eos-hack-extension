@@ -11,6 +11,8 @@ sources = [
 extra_sources = [
   'COPYING',
 ]
+dist_files = sources + extra_sources
+dist_files += ['ui', 'misc', 'data']
 
 i18n = import('i18n')
 subdir('locale')
@@ -99,7 +101,7 @@ if extension_tool.found()
     '--extra-source=@0@/metadata.json'.format(builddir)
   ]
 
-  foreach s : extra_sources
+  foreach s : dist_files
     command += '--extra-source=@0@'.format(s)
   endforeach
 

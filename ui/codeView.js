@@ -1823,15 +1823,11 @@ function getClubhouseAppIcon() {
     return clubhouse;
 }
 
-var CLUBHOUSE_TOOLTIP_HANDLER = 0;
 function proxyApp(...args) {
     Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
 
-    if (desktopIs('endless')) {
-        if (this._id === CLUBHOUSE_ID)
-            CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(this)();
-    }
-
+    if (desktopIs('endless') && this._id === CLUBHOUSE_ID)
+        createInfoPopup(this);
 
     const originalApp = this.app;
     this._originalApp = originalApp;
@@ -2060,9 +2056,8 @@ function enable() {
 
     if (Utils.desktopIs('endless')) {
         const clubhouse = getClubhouseAppIcon();
-        if (clubhouse && !CLUBHOUSE_TOOLTIP_HANDLER) {
-            CLUBHOUSE_TOOLTIP_HANDLER = createInfoPopup.bind(clubhouse)();
-        }
+        if (clubhouse)
+            createInfoPopup(clubhouse);
     }
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
@@ -2116,13 +2111,9 @@ function disable() {
             PANEL_WAITER = 0;
         });
 
-        if (CLUBHOUSE_TOOLTIP_HANDLER) {
-            const clubhouse = getClubhouseAppIcon();
-            if (clubhouse) {
-                destroyInfoPopup.bind(clubhouse)(CLUBHOUSE_TOOLTIP_HANDLER);
-                CLUBHOUSE_TOOLTIP_HANDLER = 0;
-            }
-        }
+        const clubhouse = getClubhouseAppIcon();
+        if (clubhouse)
+            destroyInfoPopup(clubhouse);
     }
 
     WobblyFx.disable();

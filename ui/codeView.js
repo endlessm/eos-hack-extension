@@ -286,7 +286,7 @@ function _appIsAllowedHacking(desktopId) {
 // applying both the physical geometry and maximization state.
 function _synchronizeMetaWindowActorGeometries(src, dst) {
     const srcGeometry = src.meta_window.get_frame_rect();
-    const dstGeometry = dst.meta_window.get_frame_rect();
+    let dstGeometry = dst.meta_window.get_frame_rect();
 
     const srcIsMaximized = src.meta_window.maximized_horizontally &&
                            src.meta_window.maximized_vertically;
@@ -311,6 +311,17 @@ function _synchronizeMetaWindowActorGeometries(src, dst) {
             srcGeometry.y,
             srcGeometry.width,
             srcGeometry.height);
+    }
+
+    // If it's not equal after the change it's because the dst window has some
+    // size restrictions, so we should resize the src
+    dstGeometry = dst.meta_window.get_frame_rect();
+    if (!srcGeometry.equal(dstGeometry)) {
+        src.meta_window.move_resize_frame(true,
+            dstGeometry.x,
+            dstGeometry.y,
+            dstGeometry.width,
+            dstGeometry.height);
     }
 }
 
@@ -1757,7 +1768,7 @@ function getWindows(workspace) {
     return windows.map(w => {
         return w.is_attached_dialog() ? w.get_transient_for() : w;
     // ... and filter out hack inactive, skip-taskbar windows and duplicates
-    }).filter((w, i, a) => !w.skip_taskbar && a.indexOf(w) === i);
+    }).filter((w, i, a) => !w._hackIsInactiveWindow && !w.skip_taskbar && a.indexOf(w) === i);
 }
 
 function getWindowsForApp(app) {

@@ -12,7 +12,7 @@ extra_sources = [
   'COPYING',
 ]
 dist_files = sources + extra_sources
-dist_files += ['ui', 'misc', 'data']
+dist_files += ['ui', 'misc', 'data', 'schemas', 'migration']
 
 i18n = import('i18n')
 subdir('locale')

@@ -19,7 +19,7 @@ subdir('locale')
 
 schemas = ['com.endlessm.hack-extension']
 
-uuid = 'eos-hack@endlessm.com'
+uuid = 'eos-hack@endlessos.org'
 
 ver_arr = meson.project_version().split('.')
 if ver_arr[1].to_int().is_even()

@@ -12,7 +12,13 @@ extra_sources = [
   'COPYING',
 ]
 dist_files = sources + extra_sources
-dist_files += ['ui', 'misc', 'data']
+dist_files += [
+  'ui',
+  'misc',
+  'data',
+  'schemas',
+  'migration',
+]
 
 i18n = import('i18n')
 subdir('locale')
@@ -98,7 +104,8 @@ if extension_tool.found()
     'pack',
     '--force',
     '--out-dir=@0@'.format(builddir),
-    '--extra-source=@0@/metadata.json'.format(builddir)
+    '--extra-source=@0@/stylesheet.css'.format(builddir),
+    '--extra-source=@0@/metadata.json'.format(builddir),
   ]
 
   foreach s : dist_files
@@ -107,5 +114,5 @@ if extension_tool.found()
 
   command += srcdir
 
-  run_target('zip-file', command: command)
+  run_target('zip-file', command: command, depends: styles)
 endif

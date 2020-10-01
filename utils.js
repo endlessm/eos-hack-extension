@@ -216,7 +216,7 @@ const _currentDesktopsMatches = {};
 //
 // This function is a copy of:
 // https://github.com/endlessm/gnome-shell/blob/master/js/misc/desktop.js
-function desktopIs(name, maxVersion = '3.38') {
+function desktopIs(name, maxVersion = config.PACKAGE_VERSION) {
     if (config.PACKAGE_VERSION > maxVersion)
         return false;
 

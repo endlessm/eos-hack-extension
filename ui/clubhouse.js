@@ -1186,8 +1186,6 @@ function activateActionFull(actionId, target, hideOverview) {
             logError(error, 'Failed to activate application proxy');
         }
     });
-    Main.overview.hide();
-    Main.panel.closeCalendar();
 
     if (hideOverview) {
         Main.overview.hide();

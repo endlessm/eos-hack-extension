@@ -6,7 +6,7 @@ const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
 var gettext = Gettext.gettext;
 
-function getMigrationSettings() {
+function getMigrationSettings(schemaId = 'org.gnome.shell') {
     const dir = Extension.dir.get_child('migration').get_path();
     const source = Gio.SettingsSchemaSource.new_from_directory(dir,
         Gio.SettingsSchemaSource.get_default(), false);
@@ -14,7 +14,7 @@ function getMigrationSettings() {
     if (!source)
         throw new Error('Error Initializing the thingy.');
 
-    const schema = source.lookup('org.gnome.shell', false);
+    const schema = source.lookup(schemaId, false);
 
     if (!schema)
         throw new Error('Schema missing.');
@@ -44,7 +44,8 @@ function tryMigrateSettings() {
         return;
     }
 
-    const oldSettings = getMigrationSettings();
+    const oldSettings = getMigrationSettings('org.gnome.shell');
+    const renameSettings = getMigrationSettings('com.endlessm.hack-extension');
     const boolSettings = [
         'hack-icon-pulse',
         'show-hack-launcher',
@@ -57,11 +58,16 @@ function tryMigrateSettings() {
         'wobbly-object-movement-range',
     ];
 
-    boolSettings.forEach((k) => {
-        settings.set_boolean(k, oldSettings.get_boolean(k));
+    // if the migration from the shell settings has been done, we try the
+    // migration from the old settings
+    const oldMigrated = renameSettings.get_boolean('hack-settings-migrated');
+    const s = oldMigrated ? renameSettings : oldSettings;
+
+    boolSettings.forEach(k => {
+        settings.set_boolean(k, s.get_boolean(k));
     });
-    floatSettings.forEach((k) => {
-        settings.set_double(k, oldSettings.get_double(k));
+    floatSettings.forEach(k => {
+        settings.set_double(k, s.get_double(k));
     });
 
     settings.set_boolean('hack-settings-migrated', true);

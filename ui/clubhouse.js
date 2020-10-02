@@ -1286,9 +1286,9 @@ async function connectOnboarding(cancellable) {
             Gio.DBus.session,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             null,
-            'com.endlessm.onboarding',
-            '/com/endlessm/onboarding',
-            'com.endlessm.onboarding',
+            'org.endlessos.onboarding',
+            '/org/endlessos/onboarding',
+            'org.endlessos.onboarding',
             cancellable);
     } catch (e) {
         if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schemalist>
-  <schema path="/com/endlessm/hack-extension/" id="com.endlessm.hack-extension" >
+  <schema path="/org/endlessos/hack-extension/" id="org.endlessos.hack-extension" >
     <key type="b" name="hack-settings-migrated">
       <default>false</default>
       <summary>The old hack settings has been migrated</summary>

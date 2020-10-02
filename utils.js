@@ -52,7 +52,7 @@ function getSettings() {
     if (!source)
         throw new Error('Error Initializing the thingy.');
 
-    const schema = source.lookup('com.endlessm.hack-extension', false);
+    const schema = source.lookup('org.endlessos.hack-extension', false);
 
     if (!schema)
         throw new Error('Schema missing.');

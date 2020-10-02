@@ -23,7 +23,7 @@ dist_files += [
 i18n = import('i18n')
 subdir('locale')
 
-schemas = ['com.endlessm.hack-extension']
+schemas = ['org.endlessos.hack-extension']
 
 uuid = 'eos-hack@endlessos.org'
 

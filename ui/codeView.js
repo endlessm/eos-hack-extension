@@ -19,6 +19,7 @@ const SoundServer = Hack.imports.misc.soundServer;
 
 const WINDOW_ANIMATION_TIME = 250;
 
+const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 var CodingSessionStateEnum = {
     APP: 0,
@@ -1826,18 +1827,29 @@ function is_speedwagon_window(metaWindow) {
     return Shell.WindowTracker.is_speedwagon_window(metaWindow);
 }
 
-function proxyApp(...args) {
-    Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
-    const originalApp = this.app;
-    this._originalApp = originalApp;
-    const id = this.app.get_id().slice(0, -8);
+function proxyClubhouseIcon(icon) {
+    if (icon.hasHackProxy) {
+        return;
+    }
+
+    const originalApp = icon.app;
+    icon._originalApp = originalApp;
+    const id = icon.app.get_id().slice(0, -8);
 
     const handler = {
         get(target, name) {
             if (name === 'get_windows')
-                return getWindowsForApp.bind(this, target);
+                return getWindowsForApp.bind(icon, target);
             if (name === 'activate') {
                 if (id === 'com.hack_computer.Clubhouse') {
+                    const app = Utils.getClubhouseApp();
+                    const clubhouseWindow = app.get_windows().find(win => {
+                        const gtkId = win.get_gtk_application_id();
+                        return gtkId === 'com.hack_computer.Clubhouse';
+                    });
+                    if (clubhouseWindow)
+                        clubhouseWindow.raise();
+
                     return () => {
                         // We should activate the clubhouse using the DBus API because some
                         // toolbox windows shares the same app so activating the app could not
@@ -1873,7 +1885,23 @@ function proxyApp(...args) {
         },
     };
 
-    this.app = new Proxy(this.app, handler);
+    icon.app = new Proxy(icon.app, handler);
+    icon.hasHackProxy = true;
+}
+
+function getClubhouseDashIcon() {
+    const dash = Main.overview.dash;
+    const clubhouse = dash._box.get_children().find(iconbox => {
+        const icon = iconbox.child;
+        return icon.app.get_id() === CLUBHOUSE_ID;
+    });
+
+    return clubhouse ? clubhouse.child : clubhouse;
+}
+
+function proxyApp(...args) {
+    Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
+    proxyClubhouseIcon(this);
 }
 
 function addButton(app) {
@@ -2065,6 +2093,10 @@ function enable() {
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
     Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
+
+    const clubhouseIcon = getClubhouseDashIcon();
+    if (clubhouseIcon)
+        proxyClubhouseIcon(clubhouseIcon);
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 

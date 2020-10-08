@@ -1888,16 +1888,6 @@ function proxyClubhouseIcon(icon) {
     icon.hasHackProxy = true;
 }
 
-function getClubhouseDashIcon() {
-    const dash = Main.overview.dash;
-    const clubhouse = dash._box.get_children().find(iconbox => {
-        const icon = iconbox.child;
-        return icon.app.get_id() === CLUBHOUSE_ID;
-    });
-
-    return clubhouse ? clubhouse.child : clubhouse;
-}
-
 function proxyApp(...args) {
     Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
 
@@ -2046,10 +2036,17 @@ function mapWindow(shellwm, actor) {
 
     if (actor._windowType === Meta.WindowType.NORMAL)
         this._codeViewManager.handleMapWindow(actor);
+
+    if (actor.meta_window.gtk_application_id === 'com.hack_computer.Clubhouse') {
+        Main.overview.dash._queueRedisplay();
+    }
 }
 
 function destroyWindow(shellwm, actor) {
     this._codeViewManager.handleDestroyWindow(actor);
+    if (actor.meta_window.gtk_application_id === 'com.hack_computer.Clubhouse') {
+        Main.overview.dash._queueRedisplay();
+    }
 }
 
 const WM_HANDLERS = [];
@@ -2061,6 +2058,59 @@ function _wmConnect(signal, fn) {
     const handler = global.window_manager.connect(signal, fn);
     WM_HANDLERS.push(handler);
     return handler;
+}
+
+function overrideDash() {
+    const dash = Main.overview.dash;
+    const clubhouse = dash._box.get_children().find(iconbox => {
+        const icon = iconbox.child;
+        return icon.app.get_id() === CLUBHOUSE_ID;
+    });
+
+    const clubhouseIcon = clubhouse ? clubhouse.child : clubhouse;
+    if (clubhouseIcon)
+        proxyClubhouseIcon(clubhouseIcon);
+
+    dash._originalAppSystem = dash._appSystem;
+    // Javascript proxy to hide clubhouse icon when the clubhouse window is not
+    // visible
+    dash._appSystem = new Proxy(dash._originalAppSystem, {
+        get: function (target, prop, receiver) {
+            const obj = Reflect.get(...arguments);
+            if (prop === 'get_running') {
+                return () => {
+                    const runningApps = obj.bind(dash._originalAppSystem)();
+                    // for the clubhouse we only show as running app if the
+                    // window is opened
+                    return runningApps.filter(app => {
+                        if (app.get_id() === CLUBHOUSE_ID) {
+                            const clubhouseWindow = app.get_windows().find(win => {
+                                const gtkId = win.get_gtk_application_id();
+                                return gtkId === 'com.hack_computer.Clubhouse';
+                            });
+
+                            return !!clubhouseWindow;
+                        }
+
+                        return true;
+                    });
+                };
+            }
+
+            if (typeof obj === 'function')
+                return obj.bind(dash._originalAppSystem);
+
+            return obj;
+        },
+    });
+}
+
+function restoreDash() {
+    const dash = Main.overview.dash;
+    if (dash._originalAppSystem) {
+        dash._appSystem = dash._originalAppSystem;
+        dash._originalAppSystem = null;
+    }
 }
 
 function enable() {
@@ -2088,9 +2138,7 @@ function enable() {
             createInfoPopup(clubhouse);
     }
 
-    const clubhouseIcon = getClubhouseDashIcon();
-    if (clubhouseIcon)
-        proxyClubhouseIcon(clubhouseIcon);
+    overrideDash();
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
@@ -2132,6 +2180,8 @@ function disable() {
 
     Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
+
+    restoreDash();
 
     if (Utils.desktopIs('endless')) {
         Utils.runWithExtension('eos-panel@endlessm.com', (panel) => {

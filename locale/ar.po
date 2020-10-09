@@ -4,16 +4,16 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 # 
 # Translators:
-# Will Thompson <wjt@endlessm.com>, 2020
+# Will Thompson <wjt@endlessos.org>, 2020
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: hack-extension\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-24 14:13+0100\n"
+"POT-Creation-Date: 2020-10-09 00:53+0000\n"
 "PO-Revision-Date: 2020-04-24 13:14+0000\n"
-"Last-Translator: Will Thompson <wjt@endlessm.com>, 2020\n"
+"Last-Translator: Will Thompson <wjt@endlessos.org>, 2020\n"
 "Language-Team: Arabic (https://www.transifex.com/endless-os/teams/9016/ar/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,13 +22,13 @@ msgstr ""
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
 #. Translators: The 'Endless Hack' is not translatable, it's the brand name
-#: ui/appDisplay.js:201
+#: ui/appDisplay.js:42
 msgid "Endless Hack: Unlock infinite possibilities through coding"
 msgstr ""
 "Endless Hack: افتح الإمكانيات اللانهائية من خلال كتابة التعليمات البرمجية"
 
 #. Translators: The 'Hack' is not translatable, it's the brand name
-#: ui/appDisplay.js:203
+#: ui/appDisplay.js:44
 msgid ""
 "Hack is a new learning platform from Endless, focused on teaching the "
 "foundations of programming and creative problem-solving to kids, ages 10 and"
@@ -39,8 +39,3 @@ msgstr ""
 "وحل المشكلات بطريقة إبداعية للأطفال الذين تتراوح أعمارهم بين 10 أعوام وأكثر."
 " من خلال 5 مسارات مختلفة، لدى Hack مجموعة متنوعة من الأنشطة التي تطور مجموعة"
 " واسعة من المهارات والمفاهيم - اطلع عليها!"
-
-#: ui/appDisplay.js:293
-#, javascript-format
-msgid "%s has been removed"
-msgstr "لقد تمت إزالة %s"

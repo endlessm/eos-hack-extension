@@ -577,7 +577,8 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         this._repositionY();
     }
 
-    _onClicked() {
+
+    vfunc_clicked() {
         // Do nothing because we don't want to activate the Clubhouse ATM
     }
 

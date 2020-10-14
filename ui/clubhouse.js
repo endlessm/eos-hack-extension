@@ -381,8 +381,9 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         actor.add_style_class_name('clubhouse-notification-image');
         const actorParams = {
             x_expand: true,
-            y_expand: true,
+            y_expand: false,
             x_align: Clutter.ActorAlign.END,
+            y_align: Clutter.ActorAlign.END,
         };
         Object.assign(actor, actorParams);
         super.setIcon(actor);
@@ -431,6 +432,7 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
         const iconBinParams = {
             x_expand: true,
             y_expand: true,
+            y_align: Clutter.ActorAlign.END,
         };
         Object.assign(this._iconBin, iconBinParams);
 

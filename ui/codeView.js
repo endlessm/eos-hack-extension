@@ -19,6 +19,7 @@ const SoundServer = Hack.imports.misc.soundServer;
 
 const WINDOW_ANIMATION_TIME = 250;
 
+const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 var CodingSessionStateEnum = {
     APP: 0,
@@ -1826,18 +1827,29 @@ function is_speedwagon_window(metaWindow) {
     return Shell.WindowTracker.is_speedwagon_window(metaWindow);
 }
 
-function proxyApp(...args) {
-    Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
-    const originalApp = this.app;
-    this._originalApp = originalApp;
-    const id = this.app.get_id().slice(0, -8);
+function proxyClubhouseIcon(icon) {
+    if (icon.hasHackProxy) {
+        return;
+    }
+
+    const originalApp = icon.app;
+    icon._originalApp = originalApp;
+    const id = icon.app.get_id().slice(0, -8);
 
     const handler = {
         get(target, name) {
             if (name === 'get_windows')
-                return getWindowsForApp.bind(this, target);
+                return getWindowsForApp.bind(icon, target);
             if (name === 'activate') {
                 if (id === 'com.hack_computer.Clubhouse') {
+                    const app = Utils.getClubhouseApp();
+                    const clubhouseWindow = app.get_windows().find(win => {
+                        const gtkId = win.get_gtk_application_id();
+                        return gtkId === 'com.hack_computer.Clubhouse';
+                    });
+                    if (clubhouseWindow)
+                        clubhouseWindow.raise();
+
                     return () => {
                         // We should activate the clubhouse using the DBus API because some
                         // toolbox windows shares the same app so activating the app could not
@@ -1873,7 +1885,13 @@ function proxyApp(...args) {
         },
     };
 
-    this.app = new Proxy(this.app, handler);
+    icon.app = new Proxy(icon.app, handler);
+    icon.hasHackProxy = true;
+}
+
+function proxyApp(...args) {
+    Utils.original(AppDisplay.AppIcon, '_init').bind(this)(...args);
+    proxyClubhouseIcon(this);
 }
 
 function addButton(app) {
@@ -2031,10 +2049,17 @@ function mapWindow(shellwm, actor) {
 
     if (actor._windowType === Meta.WindowType.NORMAL && !isSplashWindow)
         this._codeViewManager.handleMapWindow(actor);
+
+    if (actor.meta_window.gtk_application_id === 'com.hack_computer.Clubhouse') {
+        Main.overview.dash._queueRedisplay();
+    }
 }
 
 function destroyWindow(shellwm, actor) {
     this._codeViewManager.handleDestroyWindow(actor);
+    if (actor.meta_window.gtk_application_id === 'com.hack_computer.Clubhouse') {
+        Main.overview.dash._queueRedisplay();
+    }
 }
 
 const WM_HANDLERS = [];
@@ -2045,6 +2070,59 @@ function _wmConnect(signal, fn) {
     const handler = global.window_manager.connect(signal, fn);
     WM_HANDLERS.push(handler);
     return handler;
+}
+
+function overrideDash() {
+    const dash = Main.overview.dash;
+    const clubhouse = dash._box.get_children().find(iconbox => {
+        const icon = iconbox.child;
+        return icon.app.get_id() === CLUBHOUSE_ID;
+    });
+
+    const clubhouseIcon = clubhouse ? clubhouse.child : clubhouse;
+    if (clubhouseIcon)
+        proxyClubhouseIcon(clubhouseIcon);
+
+    dash._originalAppSystem = dash._appSystem;
+    // Javascript proxy to hide clubhouse icon when the clubhouse window is not
+    // visible
+    dash._appSystem = new Proxy(dash._originalAppSystem, {
+        get: function (target, prop, receiver) {
+            const obj = Reflect.get(...arguments);
+            if (prop === 'get_running') {
+                return () => {
+                    const runningApps = obj.bind(dash._originalAppSystem)();
+                    // for the clubhouse we only show as running app if the
+                    // window is opened
+                    return runningApps.filter(app => {
+                        if (app.get_id() === CLUBHOUSE_ID) {
+                            const clubhouseWindow = app.get_windows().find(win => {
+                                const gtkId = win.get_gtk_application_id();
+                                return gtkId === 'com.hack_computer.Clubhouse';
+                            });
+
+                            return !!clubhouseWindow;
+                        }
+
+                        return true;
+                    });
+                };
+            }
+
+            if (typeof obj === 'function')
+                return obj.bind(dash._originalAppSystem);
+
+            return obj;
+        },
+    });
+}
+
+function restoreDash() {
+    const dash = Main.overview.dash;
+    if (dash._originalAppSystem) {
+        dash._appSystem = dash._originalAppSystem;
+        dash._originalAppSystem = null;
+    }
 }
 
 function enable() {
@@ -2065,6 +2143,7 @@ function enable() {
     Utils.override(Main, 'activateWindow', activateWindow);
     Utils.override(AltTab.AppSwitcherPopup, '_finish', switcherFinish);
     Utils.override(AppDisplay.AppIcon, '_init', proxyApp);
+    overrideDash();
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
 
@@ -2105,6 +2184,8 @@ function disable() {
 
     Main.wm._codeViewManager.removeSessions();
     Main.wm._codeViewManager = null;
+
+    restoreDash();
 
     if (Utils.is('endless')) {
         Utils.restore(imports.ui.appIconBar.AppIconButton);

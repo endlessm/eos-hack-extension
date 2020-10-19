@@ -41,10 +41,11 @@ const Hack = ExtensionUtils.getCurrentExtension();
 
 // To import custom files
 const {ui} = Hack.imports;
-const {tryMigrateSettings, desktopIs} = Hack.imports.utils;
+const {tryMigrateSettings, desktopIs, checkHackBg} = Hack.imports.utils;
 const Service = Hack.imports.service;
 
 function enable() {
+    resetHackMods();
     tryMigrateSettings();
 
     // Flip to hack

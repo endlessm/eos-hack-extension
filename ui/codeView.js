@@ -44,8 +44,6 @@ const {createInfoPopup, destroyInfoPopup} = Hack.imports.ui.appDisplay;
 const WINDOW_ANIMATION_TIME = 250;
 const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
-const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
-
 var CodingSessionStateEnum = {
     APP: 0,
     TOOLBOX: 1,

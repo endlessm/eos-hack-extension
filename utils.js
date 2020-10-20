@@ -267,3 +267,25 @@ function runWithExtension(extension, callback) {
     callback(loaded);
     return true;
 }
+
+// Looks for old clubhouse system modifications and reset to the EOS default.
+// This only works on endless desktop and it's to ease the migration from
+// EOS 3.8 to EOS 3.9.
+//
+// This is needed because the old clubhouse changes the user background and the
+// cursor-theme on the first run.
+function resetHackMods() {
+    if (!desktopIs('endless'))
+        return;
+
+    let settings = Gio.Settings.new('org.gnome.desktop.background');
+    const clubhouseBG = 'file:///var/lib/flatpak/app/com.hack_computer.Clubhouse';
+    const bg = settings.get_string('picture-uri');
+
+    if (bg.startsWith(clubhouseBG))
+        settings.reset('picture-uri');
+
+    settings = Gio.Settings.new('org.gnome.desktop.interface');
+    if (settings.get_string('cursor-theme') === 'cursor-hack')
+        settings.reset('cursor-theme');
+}

@@ -42,7 +42,7 @@ have_schemas = schemas.length() > 0
 
 metaconf = configuration_data()
 metaconf.set('uuid', uuid)
-metaconf.set('version', 3)
+metaconf.set('version', 4)
 metaconf.set('shell_version', shell_version)
 if have_schemas
   metaconf.set('settings_schema', schemas[0])

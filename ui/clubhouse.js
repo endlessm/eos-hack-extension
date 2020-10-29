@@ -1118,9 +1118,12 @@ var Component = GObject.registerClass({
 // rich markup
 function _fixMarkup(text, allowMarkup, onlySimpleMarkup) {
     if (allowMarkup) {
+        // Remove a tag with the content, we'll parse urls using Util.findUrls
+        let _text = text.replace(/<a .*>(.*)<\/a>/g, '$1');
+
         // Support &amp;, &quot;, &apos;, &lt; and &gt;, escape all other
         // occurrences of '&'.
-        let _text = text.replace(/&(?!amp;|quot;|apos;|lt;|gt;)/g, '&amp;');
+        _text = _text.replace(/&(?!amp;|quot;|apos;|lt;|gt;)/g, '&amp;');
 
         if (onlySimpleMarkup) {
             // Support <b>, <i>, and <u>, escape anything else

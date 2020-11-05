@@ -20,7 +20,7 @@
  */
 /* global global */
 
-const {Clutter, Flatpak, Gio, GLib, GObject, Graphene, Json, Pango, St} = imports.gi;
+const {Clutter, Gio, GLib, GObject, Graphene, Json, Pango, St} = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -40,6 +40,16 @@ const Soundable = Hack.imports.ui.soundable;
 const SoundServer = Hack.imports.misc.soundServer;
 
 const {GtkNotificationDaemon} = NotificationDaemon;
+
+var Flatpak;
+try {
+    Flatpak = imports.gi.Flatpak;
+} catch(e) {
+    // If the gir-flatpak package is not installed
+    Flatpak = null;
+}
+
+const ByteArray = imports.byteArray;
 
 const CLUBHOUSE_BANNER_ANIMATION_TIME = 200;
 
@@ -185,9 +195,25 @@ class ClubhouseAnimator {
         this._clubhousePaths = this._getClubhousePaths();
     }
 
+    _getClubhousePathsWithoutFlatpak() {
+        const command = `flatpak info -l ${this._clubhouseId}`;
+        const [success, path] = GLib.spawn_command_line_sync(command);
+
+        if (!success) {
+            logError(err, 'Error while getting Clubhouse flatpak installation');
+            return [];
+        }
+
+        return [ByteArray.toString(path).trim()];
+    }
+
     _getClubhousePaths() {
         const paths = [];
         let installations = [];
+
+        if (!Flatpak) {
+            return this._getClubhousePathsWithoutFlatpak();
+        }
 
         try {
             installations = Flatpak.get_system_installations(null);

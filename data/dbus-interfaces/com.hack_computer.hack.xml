@@ -11,5 +11,7 @@
     <property name="WobblySpringFriction" type="d" access="readwrite" />
     <property name="WobblySlowdownFactor" type="d" access="readwrite"/>
     <property name="WobblyObjectMovementRange" type="d" access="readwrite"/>
+
+    <property name="EnableFlipToHack" type="b" access="readwrite"/>
   </interface>
 </node>

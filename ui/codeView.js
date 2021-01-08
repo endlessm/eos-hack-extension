@@ -385,6 +385,7 @@ var WindowTrackingButton = GObject.registerClass({
         this._flipped = false;
         this._rect = null;
         this._highlighted = false;
+        this._show = Settings.get_boolean('enable-flip-to-hack');
 
         const buttonParams = _getViewSourceButtonParams(true);
         const parsedParams = Params.parse(params, buttonParams, true);
@@ -400,6 +401,27 @@ var WindowTrackingButton = GObject.registerClass({
             FLIP_BUTTON_HEIGHT,
             FLIP_BUTTON_PULSE_SPEED);
         this._pulseIcon = this._pulseAnimation;
+
+        this._settingsHandler = Settings.connect('changed::enable-flip-to-hack', (arg) => {
+            this._show = true;
+            if (!Settings.get_boolean('enable-flip-to-hack'))
+                this._show = false;
+        });
+
+        if (!this._show)
+            this.hide();
+    }
+
+    show() {
+        if (this._show)
+            super.show();
+        else
+            this.hide();
+    }
+
+    destroy() {
+        Settings.disconnect(this._settingsHandler);
+        super.destroy();
     }
 
     get highlighted() {

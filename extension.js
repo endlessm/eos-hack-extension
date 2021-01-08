@@ -39,11 +39,14 @@
 const Config = imports.misc.config;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
+const Main = imports.ui.main;
 
 // To import custom files
 const {ui} = Hack.imports;
 const {tryMigrateSettings, resetHackMods} = Hack.imports.utils;
 const Service = Hack.imports.service;
+
+let indicator = null;
 
 function enable() {
     // Disable forward compatibility, 40 and forward
@@ -63,6 +66,10 @@ function enable() {
 
     // Hack clubhouse desktop notifications
     ui.clubhouse.enable();
+
+
+    indicator = new ui.indicator.HackIndicator();
+    Main.panel.addToStatusArea('hack', indicator);
 }
 
 function disable() {
@@ -70,4 +77,9 @@ function disable() {
     ui.codeView.disable();
 
     Service.disable();
+
+    if (indicator)
+        indicator.destroy();
+
+    indicator = null;
 }

@@ -55,6 +55,10 @@ var Service = class {
             this._dbusImpl.emit_property_changed('HackIconPulse',
                 new GLib.Variant('b', this.HackIconPulse));
         }));
+        this._settingsHandlers.push(Settings.connect('changed::enable-flip-to-hack', () => {
+            this._dbusImpl.emit_property_changed('EnableFlipToHack',
+                new GLib.Variant('b', this.EnableFlipToHack));
+        }));
         this._settingsHandlers.push(Settings.connect('changed::show-hack-launcher', () => {
             this._dbusImpl.emit_property_changed('ShowHackLauncher',
                 new GLib.Variant('b', this.ShowHackLauncher));
@@ -126,6 +130,14 @@ var Service = class {
 
     set HackIconPulse(enabled) {
         Settings.set_boolean('hack-icon-pulse', enabled);
+    }
+
+    get EnableFlipToHack() {
+        return Settings.get_boolean('enable-flip-to-hack');
+    }
+
+    set EnableFlipToHack(enabled) {
+        Settings.set_boolean('enable-flip-to-hack', enabled);
     }
 
     get ShowHackLauncher() {

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16"
+   height="16"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="hack-button-symbolic.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs12" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     id="namedview10"
+     showgrid="false"
+     inkscape:zoom="31.181241"
+     inkscape:cx="7.8875422"
+     inkscape:cy="6.9959094"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g915" />
+  <g
+     id="g855"
+     transform="translate(23.291685,-17.45835)">
+    <path
+       id="path917"
+       style="fill:#2e3436;fill-opacity:1;stroke-linecap:round;stroke-linejoin:round"
+       d="M 7.9648438 0.20703125 A 7.7928467 7.7928467 0 0 0 0.20703125 8 A 7.7928467 7.7928467 0 0 0 8 15.792969 A 7.7928467 7.7928467 0 0 0 15.792969 8 A 7.7928467 7.7928467 0 0 0 8 0.20703125 A 7.7928467 7.7928467 0 0 0 7.9648438 0.20703125 z M 8 2.2070312 A 5.7928467 5.7928467 0 0 1 13.792969 8 A 5.7928467 5.7928467 0 0 1 8 13.792969 A 5.7928467 5.7928467 0 0 1 2.2070312 8 A 5.7928467 5.7928467 0 0 1 8 2.2070312 z "
+       transform="translate(-23.291685,17.45835)" />
+    <polygon
+       class="cls-4"
+       points="45.66,37.79 45.66,37.8 "
+       id="polygon36"
+       transform="matrix(0.30290482,0,0,0.30290482,-24.984455,14.010062)"
+       style="fill:none;stroke-width:3.30136" />
+    <g
+       id="g915">
+      <g
+         id="g938"
+         transform="translate(0.3186425)">
+        <path
+           style="fill:#2e3436;fill-opacity:1;stroke-width:1;stroke-linecap:round;stroke-linejoin:round"
+           d="m -16.424381,21.190421 -3.734607,4.146768 3.734607,4.389091 -1.187347,-4.370917 z"
+           id="path1086"
+           sodipodi:nodetypes="ccccc" />
+        <path
+           style="fill:#2e3436;fill-opacity:1;stroke-width:1;stroke-linecap:round;stroke-linejoin:round"
+           d="m -14.796274,21.190421 3.734607,4.146768 -3.734607,4.389091 1.187347,-4.370917 z"
+           id="path928"
+           sodipodi:nodetypes="ccccc" />
+      </g>
+    </g>
+  </g>
+</svg>

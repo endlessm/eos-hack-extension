@@ -1817,7 +1817,7 @@ function switcherFinish(timestamp) {
 }
 
 function getClubhouseAppIcon() {
-    const items = Main.overview.viewSelector.appDisplay.getAllItems();
+    const items = Main.overview._overview.controls.appDisplay.getAllItems();
     const clubhouse = items.find(i => i._id === CLUBHOUSE_ID);
     return clubhouse;
 }
@@ -2001,7 +2001,7 @@ function _windowCanWobble(win, op) {
     return !win.is_override_redirect() && op === Meta.GrabOp.MOVING;
 }
 
-function _windowGrabbed(display, screen, win, op) {
+function _windowGrabbed(display, win, op) {
     // Occassionally, window can be null, in cases where grab-op-begin
     // was emitted on a window from shell-toolkit. Ignore these grabs.
     if (!win)
@@ -2014,7 +2014,7 @@ function _windowGrabbed(display, screen, win, op) {
     this._codeViewManager.handleWindowGrab(actor, true);
 }
 
-function _windowUngrabbed(display, op, win) {
+function _windowUngrabbed(display, win, op) {
     // Occassionally, window can be null, in cases where grab-op-end
     // was emitted on a window from shell-toolkit. Ignore these grabs.
     if (!win)

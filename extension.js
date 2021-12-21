@@ -46,12 +46,6 @@ const {tryMigrateSettings, resetHackMods} = Hack.imports.utils;
 const Service = Hack.imports.service;
 
 function enable() {
-    // Disable forward compatibility, 40 and forward
-    const shellVersion = Config.PACKAGE_VERSION;
-    if (shellVersion >= '3.39') {
-        throw new Error('Incompatible shell version > 3.38');
-    }
-
     resetHackMods();
     tryMigrateSettings();
 

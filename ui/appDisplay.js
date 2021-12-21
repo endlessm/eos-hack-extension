@@ -25,7 +25,7 @@ const {Clutter, Graphene, Gio, GLib, GObject, Pango, St} = imports.gi;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const AppDisplay = imports.ui.appDisplay;
-const {ViewPage} = imports.ui.viewSelector;
+const {ControlsState} = imports.ui.overviewControls;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
@@ -123,7 +123,8 @@ function createInfoPopup(appIcon) {
     appIcon.track_hover = true;
     appIcon._tooltipHandler = appIcon.connect('notify::hover', () => {
         if (appIcon.hover) {
-            const inApps = Main.overview.viewSelector.getActivePage() === ViewPage.APPS;
+            const currentState = Main.overview._overview.controls._stateAdjustment.value;
+            const inApps = currentState === ControlsState.APP_GRID;
             if (!inApps) {
                 return;
             }

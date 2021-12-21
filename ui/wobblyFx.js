@@ -107,10 +107,8 @@ var AbstractCommonEffect = GObject.registerClass({},
             super._init();
 
             this.allocationChangedEvent = null;
-            this.paintEvent = null;
             this.newFrameEvent = null;
             this.resizeEvent = null;
-            this.parentActor = null;
             this.operationType = params.op;
             this.effectDisabled = false;
             this.timerId = null;
@@ -162,24 +160,45 @@ var AbstractCommonEffect = GObject.registerClass({},
             this.RESTORE_FACTOR = 1 + slowdown / 10;
             this.X_TILES = 6;
             this.Y_TILES = 4;
+
+            this.set_n_tiles(this.X_TILES, this.Y_TILES);
+
+            this.initialized = false;
         }
 
         vfunc_set_actor(actor) {
             super.vfunc_set_actor(actor);
-
-            if (actor && !this.effectDisabled) {
-                this.parentActor = actor.get_parent();
-                this.set_n_tiles(this.X_TILES, this.Y_TILES);
-
-                [this.width, this.height] = actor.get_size();
-
-                this.allocationChangedEvent = actor.connect('notify::allocation', this.on_actor_event.bind(this));
-                this.paintEvent = actor.connect('paint', () => {});
-                this.resizeEvent = actor.connect('notify::size', this.resized.bind(this));
-
-                this.start_timer(this.on_tick_elapsed.bind(this), actor);
-            }
         }
+
+        vfunc_post_paint(paintNode, paintContext) {
+            super.vfunc_post_paint(paintNode, paintContext);
+
+            let [success, pv_width, pv_height] = this.get_target_size();
+            if (success) {
+                if (!this.effectDisabled && !this.initialized) {
+                    this.initialized = true;
+                    [this.width, this.height] = [pv_width, pv_height]
+                    this.init();
+                } else if (!this.effectDisabled && (this.width !== pv_width || this.height !== pv_height)) {
+                    let [oldWidth, oldHeight] = [this.width, this.height];
+                    [this.width, this.height] = [pv_width, pv_height];
+                    this.resize(this.width, this.height, oldWidth, oldHeight);
+                }
+            }
+
+            return false;
+        }
+
+        vfunc_modify_paint_volume(pv) {
+            return false;
+        }
+
+        init() {
+            this.allocationChangedEvent = this.actor.connect('notify::allocation', this.on_actor_event.bind(this));
+            this.start_timer(this.on_tick_elapsed.bind(this), this.actor);
+        }
+
+        resize(newWidth, newHeight, oldWidth, oldHeight) {}
 
         start_timer(timerFunction, actor) {
             this.stop_timer();
@@ -194,32 +213,19 @@ var AbstractCommonEffect = GObject.registerClass({},
                     this.timerId.disconnect(this.newFrameEvent);
                     this.newFrameEvent = null;
                 }
-                this.timerId.run_dispose();
+                this.timerId.stop();
                 this.timerId = null;
             }
         }
 
-        resized() {}
-
         destroy() {
             this.stop_timer();
-            this.parentActor = null;
             const actor = this.get_actor();
 
             if (actor) {
-                if (this.paintEvent) {
-                    actor.disconnect(this.paintEvent);
-                    this.paintEvent = null;
-                }
-
                 if (this.allocationChangedEvent) {
                     actor.disconnect(this.allocationChangedEvent);
                     this.allocationChangedEvent = null;
-                }
-
-                if (this.resizeEvent) {
-                    actor.disconnect(this.resizeEvent);
-                    this.resizeEvent = null;
                 }
 
                 actor.remove_effect(this);
@@ -252,7 +258,6 @@ var WobblyEffect = GObject.registerClass({},
     class WobblyEffect extends AbstractCommonEffect {
         on_actor_event(actor, allocation) {
             [this.xNew, this.yNew] = [actor.get_x(), actor.get_y()];
-            [this.width, this.height] = actor.get_size();
 
             if (this.initOldValues) {
                 let [xMouse, yMouse] = global.get_pointer();
@@ -278,13 +283,13 @@ var WobblyEffect = GObject.registerClass({},
             return false;
         }
 
-        resized(actor) {
-            let newWidth, newHeight;
-            [newWidth, newHeight] = actor.get_size();
-            if (this.width <= newWidth && this.height <= newHeight && (this.width != newWidth || this.height != newHeight)) {
+        resize(newWidth, newHeight, ooldWidth, oldHeight) {
+            if (this.actor.get_x() == 0 && this.actor.get_y() == 0 && oldWidth <= newWidth && oldHeight <= newHeight && (oldWidth != newWidth || oldHeight != newHeight)) {
+                //actor maximized
                 this.destroy();
             } else {
                 [this.xNew, this.yNew] = [newWidth, newHeight];
+                this.initOldValues = true;
             }
         }
 
@@ -309,19 +314,21 @@ var WobblyEffect = GObject.registerClass({},
         }
 
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
-                + Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
+            if (this.initialized) {
+                v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
+                    + Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
 
-            if (this.xPickedUp < this.width / 5) {
-                v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
-            } else if (this.xPickedUp > this.width * 0.8) {
-                v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
-            } else {
-                v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
-                    + this.yDeltaStretch * v.ty
-                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+                if (this.xPickedUp < this.width / 5) {
+                    v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+                } else if (this.xPickedUp > this.width * 0.8) {
+                    v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+                } else {
+                    v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                        + this.yDeltaStretch * v.ty
+                        + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+                }
             }
         }
     }
@@ -449,6 +456,7 @@ let resizeMinMaxOpId = 0;
 let timeoutWobblyId = 0;
 let timeoutMinMaxId = 0;
 let wobblyEnabledId = 0;
+let destroyId = 0;
 
 function stop_wobbly_timer() {
     if (timeoutWobblyId) {
@@ -477,6 +485,9 @@ function enable() {
     if (resizeMinMaxOpId)
         global.window_manager.disconnect(resizeMinMaxOpId);
 
+    if (destroyId)
+        global.window_manager.disconnect(destroyId);
+
     wobblyEnabledId = Settings.connect('changed::wobbly-effect', () => {
         const enabled = Settings.get_boolean('wobbly-effect');
         if (enabled)
@@ -490,7 +501,7 @@ function enable() {
         return;
     }
 
-    grabOpBeginId = global.display.connect('grab-op-begin', (display, screen, window, op) => {
+    grabOpBeginId = global.display.connect('grab-op-begin', (display, window, op) => {
         if (!is_managed_op(op))
             return;
 
@@ -505,7 +516,7 @@ function enable() {
         }
     });
 
-    grabOpEndId = global.display.connect('grab-op-end', (display, screen, window) => {
+    grabOpEndId = global.display.connect('grab-op-end', (display, window) => {
         let actor = get_actor(window);
         if (actor) {
             stop_actor_wobbly_effect(actor);
@@ -543,6 +554,14 @@ function enable() {
         });
     });
 
+    destroyId = global.window_manager.connect("destroy", (e, actor) => {
+        if (has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            destroy_actor_wobbly_effect(actor);
+            destroy_actor_min_max_effect(actor);
+        }
+    });
+
     minimizeId = global.window_manager.connect("minimize", (e, actor) => {
         if (has_wobbly_effect(actor)) {
             stop_wobbly_timer();
@@ -575,6 +594,11 @@ function disable(disconnect = true) {
     if (resizeMinMaxOpId) {
         global.window_manager.disconnect(resizeMinMaxOpId);
         resizeMinMaxOpId = 0;
+    }
+
+    if (destroyId) {
+        global.window_manager.disconnect(destroyId);
+        destroyId = 0;
     }
 
     stop_wobbly_timer();

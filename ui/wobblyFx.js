@@ -80,7 +80,7 @@ function stop_actor_wobbly_effect(actor) {
     if (actor) {
         let effect = actor.get_effect(EFFECT_NAME);
         if (effect)
-            effect.stop();
+            effect.stop(actor);
     }
 }
 
@@ -175,12 +175,11 @@ var AbstractCommonEffect = GObject.registerClass({},
                 this.allocationChangedEvent = actor.connect('notify::allocation', this.on_actor_event.bind(this));
                 this.paintEvent = actor.connect('paint', () => {});
 
-                this.start_timer(this.on_tick_elapsed.bind(this));
+                this.start_timer(this.on_tick_elapsed.bind(this), actor);
             }
         }
 
-        start_timer(timerFunction) {
-            const actor = this.get_actor();
+        start_timer(timerFunction, actor) {
             this.stop_timer();
             this.timerId = new Clutter.Timeline({actor, duration: CLUTTER_TIMELINE_DURATION});
             this.newFrameEvent = this.timerId.connect('new-frame', timerFunction);
@@ -218,12 +217,12 @@ var AbstractCommonEffect = GObject.registerClass({},
             }
         }
 
-        stop() {
+        stop(actor) {
             [this.xDeltaStop, this.yDeltaStop] = [this.xDelta * 1.5, this.yDelta * 1.5];
             [this.xDeltaStopMoving, this.yDeltaStopMoving] = [0, 0];
             this.i = 0;
 
-            this.start_timer(this.on_stop_tick_elapsed.bind(this));
+            this.start_timer(this.on_stop_tick_elapsed.bind(this), actor);
         }
 
         on_stop_tick_elapsed() {
@@ -242,11 +241,8 @@ var AbstractCommonEffect = GObject.registerClass({},
 
 var WobblyEffect = GObject.registerClass({},
     class WobblyEffect extends AbstractCommonEffect {
-        on_actor_event() {
-            const actor = this.get_actor();
-            const {allocation} = actor;
-
-            [this.xNew, this.yNew] = allocation.get_origin();
+        on_actor_event(actor, allocation) {
+            [this.xNew, this.yNew] = [actor.get_x(), actor.get_y()];
             [this.width, this.height] = actor.get_size();
 
             if (this.initOldValues) {

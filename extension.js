@@ -65,3 +65,6 @@ function disable() {
 
     Service.disable();
 }
+
+
+function init() {}

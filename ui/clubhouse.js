@@ -369,6 +369,7 @@ class ClubhouseNotificationBanner extends MessageTray.NotificationBanner {
 
         // Override the style name because this is a not a regular notification
         this.remove_style_class_name('notification-banner');
+        this.remove_style_class_name('message');
         this.add_style_class_name('clubhouse-notification');
         this._iconBin.add_style_class_name('clubhouse-notification-icon-bin');
         this._closeButton.add_style_class_name('clubhouse-notification-close-button');

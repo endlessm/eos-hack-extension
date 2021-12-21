@@ -250,7 +250,6 @@ var WobblyEffect = GObject.registerClass({},
 
                 [this.xOld, this.yOld] = [this.xNew, this.yNew];
                 [this.xPickedUp, this.yPickedUp] = [xMouse - this.xNew, yMouse - this.yNew];
-
                 this.yCoefficient = (1 - this.yPickedUp / this.height) / (Math.pow(this.width, 2) * this.height);
 
                 this.initOldValues = false;
@@ -291,19 +290,19 @@ var WobblyEffect = GObject.registerClass({},
         }
 
         vfunc_deform_vertex(w, h, v) {
-            v.x += (1 - Math.cos(Math.PI * v.y / h / 2)) * this.xDelta / 2
-                + Math.abs(this.xPickedUp - v.x) / w * this.xDeltaStopMoving;
+            v.x += (1 - Math.cos(Math.PI * v.ty / 2)) * this.xDelta / 2
+                + Math.abs(this.xPickedUp - this.width * v.tx) / this.width * this.xDeltaStopMoving;
 
-            if (this.xPickedUp < w / 5) {
-                v.y += this.yDelta - Math.pow(w - v.x, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
-            } else if (this.xPickedUp > w * 0.8) {
-                v.y += this.yDelta - Math.pow(v.x, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
+            if (this.xPickedUp < this.width / 5) {
+                v.y += this.yDelta - Math.pow(this.width - this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
+            } else if (this.xPickedUp > this.width * 0.8) {
+                v.y += this.yDelta - Math.pow(this.width * v.tx, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
             } else {
-                v.y += Math.pow(v.x - this.xPickedUp, 2) * this.yDelta * (h - v.y) * this.yCoefficient
-                    + this.yDeltaStretch * v.y / h
-                    + Math.abs(this.yPickedUp - v.y) / h * this.yDeltaStopMoving;
+                v.y += Math.pow(this.width * v.tx - this.xPickedUp, 2) * this.yDelta * (this.height - this.height * v.ty) * this.yCoefficient
+                    + this.yDeltaStretch * v.ty
+                    + Math.abs(this.yPickedUp - this.height * v.ty) / this.height * this.yDeltaStopMoving;
             }
         }
     }
@@ -523,6 +522,20 @@ function enable() {
 
             return false;
         });
+    });
+
+    minimizeId = global.window_manager.connect("minimize", (e, actor) => {
+        if (has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            destroy_actor_wobbly_effect(actor);
+        }
+    });
+
+    unminimizeId = global.window_manager.connect("unminimize", (e, actor) => {
+        if (has_wobbly_effect(actor)) {
+            stop_wobbly_timer();
+            destroy_actor_wobbly_effect(actor);
+        }
     });
 }
 

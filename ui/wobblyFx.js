@@ -457,6 +457,8 @@ let timeoutWobblyId = 0;
 let timeoutMinMaxId = 0;
 let wobblyEnabledId = 0;
 let destroyId = 0;
+let minimizeId = 0;
+let unminimizeId = 0;
 
 function stop_wobbly_timer() {
     if (timeoutWobblyId) {
@@ -487,6 +489,12 @@ function enable() {
 
     if (destroyId)
         global.window_manager.disconnect(destroyId);
+
+    if (minimizeId)
+        global.window_manager.disconnect(minimizeId);
+
+    if (unminimizeId)
+        global.window_manager.disconnect(unminimizeId);
 
     wobblyEnabledId = Settings.connect('changed::wobbly-effect', () => {
         const enabled = Settings.get_boolean('wobbly-effect');
@@ -599,6 +607,16 @@ function disable(disconnect = true) {
     if (destroyId) {
         global.window_manager.disconnect(destroyId);
         destroyId = 0;
+    }
+
+    if (minimizeId) {
+        global.window_manager.disconnect(minimizeId);
+        minimizeId = 0;
+    }
+
+    if (unminimizeId) {
+        global.window_manager.disconnect(unminimizeId);
+        unminimizeId = 0;
     }
 
     stop_wobbly_timer();

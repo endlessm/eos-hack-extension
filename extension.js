@@ -45,26 +45,29 @@ const {ui} = Hack.imports;
 const {tryMigrateSettings, resetHackMods} = Hack.imports.utils;
 const Service = Hack.imports.service;
 
-function enable() {
-    resetHackMods();
-    tryMigrateSettings();
+class Extension {
+    enable() {
+        resetHackMods();
+        tryMigrateSettings();
 
-    // Flip to hack
-    ui.codeView.enable();
+        // Flip to hack
+        ui.codeView.enable();
 
-    // DBus API
-    Service.enable();
+        // DBus API
+        Service.enable();
 
-    // Hack clubhouse desktop notifications
-    ui.clubhouse.enable();
+        // Hack clubhouse desktop notifications
+        ui.clubhouse.enable();
+    }
+
+    disable() {
+        ui.clubhouse.disable();
+        ui.codeView.disable();
+
+        Service.disable();
+    }
 }
 
-function disable() {
-    ui.clubhouse.disable();
-    ui.codeView.disable();
-
-    Service.disable();
+function init() {
+    return new Extension();
 }
-
-
-function init() {}

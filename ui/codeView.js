@@ -2112,6 +2112,8 @@ function restoreDash() {
 }
 
 function enable() {
+    Main.wm._codeViewManager = new CodeViewManager();
+
     // override alt-tab switchers
     Utils.override(AltTab, 'getWindows', getWindows);
     Utils.override(AltTab, '_createWindowClone', createWindowClone);
@@ -2139,8 +2141,6 @@ function enable() {
     overrideDash();
 
     Utils.override(Workspace.Workspace, '_isOverviewWindow', isOverviewWindow);
-
-    Main.wm._codeViewManager = new CodeViewManager();
 
     if (Utils.desktopIs('endless')) {
         PANEL_WAITER = Utils.waitForExtension('eos-panel@endlessm.com', (panel) => {
@@ -2176,9 +2176,6 @@ function disable() {
     Utils.restore(AppDisplay.AppIcon);
     Utils.restore(Workspace.Workspace);
 
-    Main.wm._codeViewManager.removeSessions();
-    Main.wm._codeViewManager = null;
-
     restoreDash();
 
     if (Utils.desktopIs('endless')) {
@@ -2205,4 +2202,7 @@ function disable() {
 
     global.display.disconnect(GRAB_BEGIN);
     global.display.disconnect(GRAB_END);
+
+    Main.wm._codeViewManager.removeSessions();
+    Main.wm._codeViewManager = null;
 }

@@ -2204,5 +2204,5 @@ function disable() {
     global.display.disconnect(GRAB_END);
 
     Main.wm._codeViewManager.removeSessions();
-    Main.wm._codeViewManager = null;
+    delete Main.wm._codeViewManager;
 }

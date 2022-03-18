@@ -11,5 +11,9 @@
     <property name="WobblySpringFriction" type="d" access="readwrite" />
     <property name="WobblySlowdownFactor" type="d" access="readwrite"/>
     <property name="WobblyObjectMovementRange" type="d" access="readwrite"/>
+
+    <property name="CursorSize" type="i" access="readwrite"/>
+    <property name="CursorTheme" type="s" access="readwrite"/>
+    <property name="MouseSpeed" type="d" access="readwrite"/>
   </interface>
 </node>

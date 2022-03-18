@@ -80,10 +80,38 @@ var Service = class {
             this._dbusImpl.emit_property_changed('WobblyObjectMovementRange',
                 new GLib.Variant('d', this.WobblyObjectMovementRange));
         }));
+
+        this._ifaceSettings = new Gio.Settings({
+            schemaId: 'org.gnome.desktop.interface',
+        });
+
+        this._touchpadSettings = new Gio.Settings({
+            schemaId: 'org.gnome.desktop.peripherals.touchpad',
+        });
+
+        this._mouseSettings = new Gio.Settings({
+            schemaId: 'org.gnome.desktop.peripherals.mouse',
+        });
+
+        this._cursorSizeHandler = this._ifaceSettings.connect('changed::cursor-size', () => {
+            this._dbusImpl.emit_property_changed('CursorSize',
+                new GLib.Variant('i', this.CursorSize));
+        });
+        this._cursorThemeHandler = this._ifaceSettings.connect('changed::cursor-theme', () => {
+            this._dbusImpl.emit_property_changed('CursorTheme',
+                new GLib.Variant('s', this.CursorTheme));
+        });
+        this._speedHandler = this._mouseSettings.connect('changed::speed', () => {
+            this._dbusImpl.emit_property_changed('MouseSpeed',
+                new GLib.Variant('d', this.MouseSpeed));
+        });
     }
 
     stop() {
         this._settingsHandlers.forEach(handler => Settings.disconnect(handler));
+        this._ifaceSettings.disconnect(this._cursorSizeHandler);
+        this._ifaceSettings.disconnect(this._cursorThemeHandler);
+        this._mouseSettings.disconnect(this._speedHandler);
         Shell.WindowTracker.get_default().disconnect(this._windowTrackId);
 
         try {
@@ -174,6 +202,31 @@ var Service = class {
 
     set WobblyObjectMovementRange(value) {
         Settings.set_double('wobbly-object-movement-range', value);
+    }
+
+    get CursorSize() {
+        return this._ifaceSettings.get_int('cursor-size');
+    }
+
+    set CursorSize(value) {
+        this._ifaceSettings.set_int('cursor-size', value);
+    }
+
+    get CursorTheme() {
+        return this._ifaceSettings.get_string('cursor-theme');
+    }
+
+    set CursorTheme(value) {
+        this._ifaceSettings.set_string('cursor-theme', value);
+    }
+
+    get MouseSpeed() {
+        return this._mouseSettings.get_double('speed');
+    }
+
+    set MouseSpeed(value) {
+        this._touchpadSettings.set_double('speed', value);
+        this._mouseSettings.set_double('speed', value);
     }
 };
 

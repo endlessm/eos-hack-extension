@@ -1979,6 +1979,7 @@ function createWindowClone(window, size) {
     }
 
     actor.add_child(clone);
+    actor.source = window;
 
     return actor;
 }

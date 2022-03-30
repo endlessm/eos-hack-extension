@@ -23,7 +23,8 @@
 const {Gio, GLib, Shell} = imports.gi;
 const {config} = imports.misc;
 const Gettext = imports.gettext.domain('hack-extension');
-const Extension = imports.misc.extensionUtils.getCurrentExtension();
+const ExtensionUtils = imports.misc.extensionUtils;
+const Extension = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 
 var {gettext} = Gettext;
@@ -45,19 +46,8 @@ function getMigrationSettings(schemaId = 'org.gnome.shell') {
 }
 
 function getSettings() {
-    const dir = Extension.dir.get_child('schemas').get_path();
-    const source = Gio.SettingsSchemaSource.new_from_directory(dir,
-        Gio.SettingsSchemaSource.get_default(), false);
-
-    if (!source)
-        throw new Error('Error Initializing the thingy.');
-
-    const schema = source.lookup('org.endlessos.hack-extension', false);
-
-    if (!schema)
-        throw new Error('Schema missing.');
-
-    return new Gio.Settings({settings_schema: schema});
+    const schema = 'org.endlessos.hack-extension';
+    return ExtensionUtils.getSettings(schema);
 }
 
 function tryMigrateSettings() {

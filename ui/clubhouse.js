@@ -24,7 +24,6 @@ const {Clutter, Gio, GLib, GObject, Graphene, Json, Pango, St} = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
-const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 
 const {Animation} = imports.ui.animation;

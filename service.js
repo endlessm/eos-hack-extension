@@ -24,21 +24,21 @@
 const {Gio, GLib, Shell} = imports.gi;
 const ShellDBus = imports.ui.shellDBus;
 
+const Main = imports.ui.main;
+
+const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
+
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
 const Utils = Hack.imports.utils;
-
-const Main = imports.ui.main;
-
-const IFACE = Utils.loadInterfaceXML('com.hack_computer.hack');
-const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
 
 /* eslint class-methods-use-this: 'off' */
 var Service = class {
     constructor() {
         this._settings = Utils.getSettings();
+        const iface = Utils.loadInterfaceXML('com.hack_computer.hack');
         this._settingsHandlers = [];
-        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
+        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(iface, this);
         this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.hack',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
 
@@ -230,9 +230,9 @@ var Service = class {
     }
 };
 
-const HackableAppIface = Utils.loadInterfaceXML('com.hack_computer.HackableApp');
 var HackableApp = class {
     constructor(session) {
+        const HackableAppIface = Utils.loadInterfaceXML('com.hack_computer.HackableApp');
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppIface, this);
 
         this._session = session;
@@ -291,9 +291,9 @@ var HackableApp = class {
     }
 };
 
-const HackableAppsManagerIface = Utils.loadInterfaceXML('com.hack_computer.HackableAppsManager');
 var HackableAppsManager = class {
     constructor() {
+        const HackableAppsManagerIface = Utils.loadInterfaceXML('com.hack_computer.HackableAppsManager');
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppsManagerIface, this);
         this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.HackableAppsManager',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
@@ -361,6 +361,7 @@ var HACKABLE_APPS_MANAGER_SERVICE = null;
 
 function enable() {
     const Settings = Utils.getSettings();
+
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 

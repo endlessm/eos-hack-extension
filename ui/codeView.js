@@ -2052,7 +2052,7 @@ function overrideDash() {
     const dash = Main.overview.dash;
     const clubhouse = dash._box.get_children().find(iconbox => {
         const icon = iconbox.child;
-        return icon.app.get_id() === CLUBHOUSE_ID;
+        return icon && icon.app.get_id() === CLUBHOUSE_ID;
     });
 
     const clubhouseIcon = clubhouse ? clubhouse.child : clubhouse;

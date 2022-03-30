@@ -22,10 +22,6 @@
 
 const {Clutter, Gio, GLib, GObject, Graphene, Json, Pango, St} = imports.gi;
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Hack = ExtensionUtils.getCurrentExtension();
-const Utils = Hack.imports.utils;
-
 const {Animation} = imports.ui.animation;
 const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
@@ -35,10 +31,13 @@ const NotificationDaemon = imports.ui.notificationDaemon;
 
 const Util = imports.misc.util;
 
-const Soundable = Hack.imports.ui.soundable;
-const SoundServer = Hack.imports.misc.soundServer;
-
 const {GtkNotificationDaemon} = NotificationDaemon;
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Hack = ExtensionUtils.getCurrentExtension();
+const Utils = Hack.imports.utils;
+const SoundServer = Hack.imports.misc.soundServer;
+const Soundable = Hack.imports.ui.soundable;
 
 var Flatpak;
 try {
@@ -57,7 +56,6 @@ const CLUBHOUSE_BANNER_ANIMATION_TIME = 200;
 const CLUBHOUSE_BANNER_MARGIN = 30;
 
 const CLUBHOUSE_DBUS_OBJ_PATH = '/com/hack_computer/Clubhouse';
-const ClubhouseIface = Utils.loadInterfaceXML('com.hack_computer.Clubhouse');
 
 // Some button labels are replaced by customized icons if they match a
 // unicode emoji character, as per Design request.
@@ -880,6 +878,8 @@ class ClubhouseNotificationSource extends NotificationDaemon.GtkNotificationDaem
 var Component = GObject.registerClass({
 }, class ClubhouseComponent extends GObject.Object {
     _init(clubhouseIface, clubhouseId, clubhousePath) {
+        const ClubhouseIface = Utils.loadInterfaceXML('com.hack_computer.Clubhouse');
+
         this._clubhouseId = clubhouseId || 'com.hack_computer.Clubhouse';
         this._clubhouseIface = clubhouseIface || ClubhouseIface;
         this._clubhousePath = clubhousePath || CLUBHOUSE_DBUS_OBJ_PATH;

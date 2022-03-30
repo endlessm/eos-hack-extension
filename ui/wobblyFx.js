@@ -30,8 +30,7 @@
 
 const {GLib, GObject, Clutter, Meta} = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
-const Hack = ExtensionUtils.getCurrentExtension();
-const Settings = Hack.imports.utils.getSettings();
+var Settings = null;
 
 const CLUTTER_TIMELINE_DURATION = 1000 * 1000;
 const CORNER_RESIZING_DIVIDER = 6;
@@ -475,6 +474,9 @@ function stop_min_max_timer() {
 }
 
 function enable() {
+    const Hack = ExtensionUtils.getCurrentExtension();
+    Settings = Hack.imports.utils.getSettings();
+
     if (wobblyEnabledId)
         Settings.disconnect(wobblyEnabledId);
 
@@ -496,8 +498,8 @@ function enable() {
     if (unminimizeId)
         global.window_manager.disconnect(unminimizeId);
 
-    wobblyEnabledId = Settings.connect('changed::wobbly-effect', () => {
-        const enabled = Settings.get_boolean('wobbly-effect');
+    wobblyEnabledId = Settings.connect('changed::wobbly-effect', settings => {
+        const enabled = settings.get_boolean('wobbly-effect');
         if (enabled)
             enable();
         else
@@ -588,6 +590,7 @@ function enable() {
 function disable(disconnect = true) {
     if (disconnect && wobblyEnabledId) {
         Settings.disconnect(wobblyEnabledId);
+        Settings = null;
         wobblyEnabledId = 0;
     }
 

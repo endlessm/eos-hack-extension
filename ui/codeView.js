@@ -27,7 +27,6 @@ const SwitcherPopup = imports.ui.switcherPopup;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Hack = ExtensionUtils.getCurrentExtension();
-const Settings = Hack.imports.utils.getSettings();
 const Utils = Hack.imports.utils;
 
 const {Animation} = imports.ui.animation;
@@ -2053,7 +2052,7 @@ function overrideDash() {
     const dash = Main.overview.dash;
     const clubhouse = dash._box.get_children().find(iconbox => {
         const icon = iconbox.child;
-        return icon.app.get_id() === CLUBHOUSE_ID;
+        return icon && icon.app.get_id() === CLUBHOUSE_ID;
     });
 
     const clubhouseIcon = clubhouse ? clubhouse.child : clubhouse;

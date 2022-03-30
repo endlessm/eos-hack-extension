@@ -4,6 +4,6 @@
 "name": "Hack",
 "description": "Add the Flip to Hack experience to the desktop",
 "settings-schema": "@settings_schema@",
-"shell-version": ["@shell_version@"],
+"shell-version": ["40", "41", "42"],
 "url": "https://github.com/endlessm/eos-hack-extension"
 }

@@ -24,21 +24,21 @@
 const {Gio, GLib, Shell} = imports.gi;
 const ShellDBus = imports.ui.shellDBus;
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Hack = ExtensionUtils.getCurrentExtension();
-const Settings = Hack.imports.utils.getSettings();
-const Utils = Hack.imports.utils;
-
 const Main = imports.ui.main;
 
-const IFACE = Utils.loadInterfaceXML('com.hack_computer.hack');
 const CLUBHOUSE_ID = 'com.hack_computer.Clubhouse.desktop';
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Hack = ExtensionUtils.getCurrentExtension();
+const Utils = Hack.imports.utils;
 
 /* eslint class-methods-use-this: 'off' */
 var Service = class {
     constructor() {
+        this._settings = Utils.getSettings();
+        const iface = Utils.loadInterfaceXML('com.hack_computer.hack');
         this._settingsHandlers = [];
-        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
+        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(iface, this);
         this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.hack',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
 
@@ -51,32 +51,32 @@ var Service = class {
 
         this._windowTrackId = Shell.WindowTracker.get_default().connect('notify::focus-app',
             this._checkFocusAppChanged.bind(this));
-        this._settingsHandlers.push(Settings.connect('changed::hack-icon-pulse', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::hack-icon-pulse', () => {
             this._dbusImpl.emit_property_changed('HackIconPulse',
                 new GLib.Variant('b', this.HackIconPulse));
         }));
-        this._settingsHandlers.push(Settings.connect('changed::show-hack-launcher', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::show-hack-launcher', () => {
             this._dbusImpl.emit_property_changed('ShowHackLauncher',
                 new GLib.Variant('b', this.ShowHackLauncher));
         }));
 
-        this._settingsHandlers.push(Settings.connect('changed::wobbly-effect', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::wobbly-effect', () => {
             this._dbusImpl.emit_property_changed('WobblyEffect',
                 new GLib.Variant('b', this.WobblyEffect));
         }));
-        this._settingsHandlers.push(Settings.connect('changed::wobbly-spring-k', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::wobbly-spring-k', () => {
             this._dbusImpl.emit_property_changed('WobblySpringK',
                 new GLib.Variant('d', this.WobblySpringK));
         }));
-        this._settingsHandlers.push(Settings.connect('changed::wobbly-spring-friction', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::wobbly-spring-friction', () => {
             this._dbusImpl.emit_property_changed('WobblySpringFriction',
                 new GLib.Variant('d', this.WobblySpringFriction));
         }));
-        this._settingsHandlers.push(Settings.connect('changed::wobbly-slowdown-factor', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::wobbly-slowdown-factor', () => {
             this._dbusImpl.emit_property_changed('WobblySlowdownFactor',
                 new GLib.Variant('d', this.WobblySlowdownFactor));
         }));
-        this._settingsHandlers.push(Settings.connect('changed::wobbly-object-movement-range', () => {
+        this._settingsHandlers.push(this._settings.connect('changed::wobbly-object-movement-range', () => {
             this._dbusImpl.emit_property_changed('WobblyObjectMovementRange',
                 new GLib.Variant('d', this.WobblyObjectMovementRange));
         }));
@@ -108,7 +108,7 @@ var Service = class {
     }
 
     stop() {
-        this._settingsHandlers.forEach(handler => Settings.disconnect(handler));
+        this._settingsHandlers.forEach(handler => this._settings.disconnect(handler));
         this._ifaceSettings.disconnect(this._cursorSizeHandler);
         this._ifaceSettings.disconnect(this._cursorThemeHandler);
         this._mouseSettings.disconnect(this._speedHandler);
@@ -149,59 +149,59 @@ var Service = class {
     }
 
     get HackIconPulse() {
-        return Settings.get_boolean('hack-icon-pulse');
+        return this._settings.get_boolean('hack-icon-pulse');
     }
 
     set HackIconPulse(enabled) {
-        Settings.set_boolean('hack-icon-pulse', enabled);
+        this._settings.set_boolean('hack-icon-pulse', enabled);
     }
 
     get ShowHackLauncher() {
-        return Settings.get_boolean('show-hack-launcher');
+        return this._settings.get_boolean('show-hack-launcher');
     }
 
     set ShowHackLauncher(enabled) {
-        Settings.set_boolean('show-hack-launcher', enabled);
+        this._settings.set_boolean('show-hack-launcher', enabled);
     }
 
     get WobblyEffect() {
-        return Settings.get_boolean('wobbly-effect');
+        return this._settings.get_boolean('wobbly-effect');
     }
 
     set WobblyEffect(enabled) {
-        Settings.set_boolean('wobbly-effect', enabled);
+        this._settings.set_boolean('wobbly-effect', enabled);
     }
 
     get WobblySpringK() {
-        return Settings.get_double('wobbly-spring-k');
+        return this._settings.get_double('wobbly-spring-k');
     }
 
     set WobblySpringK(value) {
-        Settings.set_double('wobbly-spring-k', value);
+        this._settings.set_double('wobbly-spring-k', value);
     }
 
     get WobblySpringFriction() {
-        return Settings.get_double('wobbly-spring-friction');
+        return this._settings.get_double('wobbly-spring-friction');
     }
 
     set WobblySpringFriction(value) {
-        Settings.set_double('wobbly-spring-friction', value);
+        this._settings.set_double('wobbly-spring-friction', value);
     }
 
     get WobblySlowdownFactor() {
-        return Settings.get_double('wobbly-slowdown-factor');
+        return this._settings.get_double('wobbly-slowdown-factor');
     }
 
     set WobblySlowdownFactor(value) {
-        Settings.set_double('wobbly-slowdown-factor', value);
+        this._settings.set_double('wobbly-slowdown-factor', value);
     }
 
     get WobblyObjectMovementRange() {
-        return Settings.get_double('wobbly-object-movement-range');
+        return this._settings.get_double('wobbly-object-movement-range');
     }
 
     set WobblyObjectMovementRange(value) {
-        Settings.set_double('wobbly-object-movement-range', value);
+        this._settings.set_double('wobbly-object-movement-range', value);
     }
 
     get CursorSize() {
@@ -230,9 +230,9 @@ var Service = class {
     }
 };
 
-const HackableAppIface = Utils.loadInterfaceXML('com.hack_computer.HackableApp');
 var HackableApp = class {
     constructor(session) {
+        const HackableAppIface = Utils.loadInterfaceXML('com.hack_computer.HackableApp');
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppIface, this);
 
         this._session = session;
@@ -291,9 +291,9 @@ var HackableApp = class {
     }
 };
 
-const HackableAppsManagerIface = Utils.loadInterfaceXML('com.hack_computer.HackableAppsManager');
 var HackableAppsManager = class {
     constructor() {
+        const HackableAppsManagerIface = Utils.loadInterfaceXML('com.hack_computer.HackableAppsManager');
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(HackableAppsManagerIface, this);
         this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session, 'com.hack_computer.HackableAppsManager',
             Gio.BusNameOwnerFlags.REPLACE, null, null);
@@ -360,6 +360,8 @@ var SHELL_DBUS_SERVICE = null;
 var HACKABLE_APPS_MANAGER_SERVICE = null;
 
 function enable() {
+    const Settings = Utils.getSettings();
+
     SHELL_DBUS_SERVICE = new Service();
     HACKABLE_APPS_MANAGER_SERVICE = new HackableAppsManager();
 

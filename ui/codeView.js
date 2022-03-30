@@ -528,6 +528,9 @@ var CodingSession = GObject.registerClass({
         this._appRemovedActor = null;
         this.appRemovedByFlipBack = false;
 
+        this._destroyAppHandlerId = 0;
+        this._destroyToolboxHandlerId = 0;
+
         this._raisedIdToolbox = 0;
         this._positionChangedIdApp = 0;
         this._positionChangedIdToolbox = 0;
@@ -883,6 +886,10 @@ var CodingSession = GObject.registerClass({
     }
 
     _setupToolboxWindow() {
+        this._destroyToolboxHandlerId = this.toolbox.connect('destroy', (toolbox) => {
+            Main.wm._codeViewManager.handleDestroyWindow(toolbox);
+        });
+
         this._raisedIdToolbox =
             this.toolbox.meta_window.connect('raised',
                 this._toolboxRaised.bind(this));
@@ -907,6 +914,11 @@ var CodingSession = GObject.registerClass({
     }
 
     _cleanupToolboxWindow() {
+        if (this._destroyToolboxHandlerId !== 0) {
+            this.toolbox.disconnect(this._destroyToolboxHandlerId);
+            this._destroyToolboxHandlerId = 0;
+        }
+
         if (this._positionChangedIdToolbox) {
             this.toolbox.meta_window.disconnect(this._positionChangedIdToolbox);
             this._positionChangedIdToolbox = 0;
@@ -933,6 +945,10 @@ var CodingSession = GObject.registerClass({
     }
 
     _setupAppWindow() {
+        this._destroyAppHandlerId = this.app.connect('destroy', (app) => {
+            Main.wm._codeViewManager.handleDestroyWindow(app);
+        });
+
         this._positionChangedIdApp =
             this.app.meta_window.connect('position-changed',
                 this._synchronizeWindows.bind(this));
@@ -966,6 +982,10 @@ var CodingSession = GObject.registerClass({
     }
 
     _cleanupAppWindow() {
+        if (this._destroyAppHandlerId !== 0) {
+            this.app.disconnect(this._destroyAppHandlerId);
+            this._destroyAppHandlerId = 0;
+        }
         if (this._positionChangedIdApp !== 0) {
             this.app.meta_window.disconnect(this._positionChangedIdApp);
             this._positionChangedIdApp = 0;
@@ -1520,35 +1540,6 @@ var CodeViewManager = GObject.registerClass({
 
     _addSession(actor) {
         const session = new CodingSession({app: actor});
-
-        // When the app is minimized the WM doesn't emit the destroy signal if
-        // the app is closed, for this reason we need to listen to the 'destroy'
-        // signal of the actor if it's minimized, to be able to remove from the
-        // CodingSession list and avoid possible gnome-shell crash
-        let destroyAppHandlerId = 0;
-        let destroyToolboxHandlerId = 0;
-        session.connect('minimized', s => {
-            if (s.app) {
-                destroyAppHandlerId = s.app.connect('destroy',
-                    this.handleDestroyWindow.bind(this));
-            }
-
-            if (s.toolbox) {
-                destroyToolboxHandlerId = s.toolbox.connect('destroy',
-                    this.handleDestroyWindow.bind(this));
-            }
-        });
-        session.connect('unminimized', s => {
-            if (destroyAppHandlerId) {
-                s.app.disconnect(destroyAppHandlerId);
-                destroyAppHandlerId = 0;
-            }
-            if (destroyToolboxHandlerId) {
-                s.toolbox.disconnect(destroyToolboxHandlerId);
-                destroyToolboxHandlerId = 0;
-            }
-        });
-
         this._sessions.push(session);
         this.emit('session-added', session);
     }
@@ -1988,6 +1979,7 @@ function createWindowClone(window, size) {
     }
 
     actor.add_child(clone);
+    actor.source = window;
 
     return actor;
 }
@@ -2041,7 +2033,6 @@ function mapWindow(shellwm, actor) {
 }
 
 function destroyWindow(shellwm, actor) {
-    this._codeViewManager.handleDestroyWindow(actor);
     if (actor.meta_window.gtk_application_id === 'com.hack_computer.Clubhouse') {
         Main.overview.dash._queueRedisplay();
     }

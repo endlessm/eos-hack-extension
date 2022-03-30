@@ -77,9 +77,15 @@ class ClubhouseAnimation extends Animation {
 
         this._frameIndex = 0;
         this._framesInfo = [];
+        this._timeoutId = 0;
 
         if (frames)
             this.setFramesInfo(this._parseFrames(frames));
+
+        this.connect('destroy', () => {
+            if (this._timeoutId)
+                GLib.Source.remove(this._timeoutId);
+        });
     }
 
     play() {
@@ -122,6 +128,9 @@ class ClubhouseAnimation extends Animation {
 
     _update() {
         this._showFrame(this._frameIndex + 1);
+
+        if (this._timeoutId)
+            GLib.Source.remove(this._timeoutId);
 
         // Show the next frame after the timeout of the current one
         this._timeoutId = GLib.timeout_add(GLib.PRIORITY_LOW, this._getCurrentDelay(),
@@ -983,6 +992,11 @@ var Component = GObject.registerClass({
             this._cancellable.cancel();
             this._cancellable = null;
         }
+
+        this.proxy.disconnect(this._clubhouseProxyHandler);
+        this._clubhouseProxyHandler = 0;
+        this._clubhouseAnimator = null;
+        this._questBannerPosition = null;
 
         this._enabled = false;
         this._syncVisibility();

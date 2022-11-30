@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[eos-hack-extension.all]
+[o:endless-os:p:eos-hack-extension:r:all]
 source_file = locale/hack-extension.pot
 source_lang = en
 file_filter = locale/<lang>.po
